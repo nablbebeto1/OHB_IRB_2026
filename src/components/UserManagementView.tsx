@@ -85,13 +85,19 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
                     <option value="IRB_CHAIR">IRB_CHAIR</option>
                     <option value="SECRETARY">SECRETARY</option>
                     <option value="REVIEWER">REVIEWER</option>
-                    <option value="INVESTIGATOR">INVESTIGATOR</option>
-                    <option value="PUBLIC_VIEWER">PUBLIC_VIEWER</option>
+                    <option value="ADMIN">ADMIN</option>
+                    <option value="RESEARCHER">RESEARCHER</option>
                   </select>
                 </td>
                 <td className="p-4">
-                  <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-800">
-                    ACTIVE
+                  <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
+                    user.status === 'INACTIVE'
+                      ? 'bg-red-100 text-red-800'
+                      : user.status === 'PENDING'
+                      ? 'bg-amber-100 text-amber-800'
+                      : 'bg-emerald-100 text-emerald-800'
+                  }`}>
+                    {user.status || 'ACTIVE'}
                   </span>
                 </td>
                 <td className="p-4 text-right font-bold text-[#005BAC]">

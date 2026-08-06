@@ -10,6 +10,7 @@ export type UserRole =
   | 'REVIEWER'
   | 'COMMITTEE_MEMBER'
   | 'RESEARCHER'
+  | 'ADMIN'
   | 'GUEST';
 
 export type SubmissionStatus =
@@ -48,13 +49,18 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  username?: string;
   role: UserRole;
   department?: string;
   institution?: string;
+  position?: string;
   phone?: string;
   avatar?: string;
   signatureUrl?: string;
   twoFactorEnabled?: boolean;
+  status?: 'ACTIVE' | 'PENDING' | 'INACTIVE';
+  forcePasswordChange?: boolean;
+  password?: string;
 }
 
 export interface EthicsChecklist {
@@ -75,7 +81,9 @@ export interface EthicsChecklist {
 
 export interface UploadedDocument {
   id: string;
+  proposalId?: string;
   name: string;
+  fileName?: string;
   type:
     | 'PROPOSAL'
     | 'PROTOCOL'
@@ -88,11 +96,15 @@ export interface UploadedDocument {
     | 'DATA_COLLECTION_TOOL'
     | 'INVESTIGATOR_BROCHURE'
     | 'SUPPORTING_DOC';
+  filePath?: string;
+  fileType?: string;
   size: string;
+  fileSizeBytes?: number;
+  uploadedBy?: string;
   uploadedAt: string;
   version: string;
   virusScanned: boolean;
-  url: string;
+  url?: string;
 }
 
 export interface ReviewScoreCard {
@@ -120,6 +132,16 @@ export interface ReviewItem {
   status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
 }
 
+export interface ProposalAgreement {
+  id?: string;
+  proposalId?: string;
+  userId: string;
+  accepted: boolean;
+  acceptedDate: string;
+  ipAddress: string;
+  agreementText?: string;
+}
+
 export interface Submission {
   id: string;
   refNo: string;
@@ -129,6 +151,34 @@ export interface Submission {
   studyType: StudyType;
   fundingSource: string;
   sponsor: string;
+  // Research Information
+  introduction?: string;
+  justification?: string;
+  goalsObjectives?: string;
+  studyDesign?: string;
+  // Participant Information
+  gender?: string;
+  targetSampleSize?: number;
+  minimumAge?: number;
+  maximumAge?: number;
+  sampleSizeJustification?: string;
+  // Eligibility Criteria
+  inclusionCriteria?: string;
+  exclusionCriteria?: string;
+  // Timeline
+  initialRecruitmentDate?: string;
+  // Research Details
+  interventions?: string;
+  primaryOutcome?: string;
+  // Financial Information
+  primarySponsor?: string;
+  // Documentation
+  bibliography?: string;
+  // Contact Information
+  scientificContact?: string;
+  // Terms and Conditions Agreement
+  agreement?: ProposalAgreement;
+
   principalInvestigator: {
     name: string;
     email: string;
@@ -235,6 +285,16 @@ export interface AuditLog {
   newValue?: string;
 }
 
+export interface SmtpConfig {
+  smtpHost: string;
+  smtpPort: number;
+  smtpUsername: string;
+  smtpPassword?: string;
+  smtpSecurity: 'SSL' | 'TLS' | 'NONE';
+  smtpFromName: string;
+  smtpFromEmail: string;
+}
+
 export interface SystemSettings {
   institutionName: string;
   institutionAfaanOromo: string;
@@ -248,4 +308,5 @@ export interface SystemSettings {
   aiAssistEnabled: boolean;
   emailNotificationsEnabled: boolean;
   smsNotificationsEnabled: boolean;
+  smtpConfig?: SmtpConfig;
 }

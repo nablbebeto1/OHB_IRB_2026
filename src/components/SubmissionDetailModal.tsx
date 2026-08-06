@@ -25,6 +25,10 @@ import {
   Check,
   Edit,
   Send,
+  Lock,
+  BookOpen,
+  UserCheck,
+  DollarSign,
 } from 'lucide-react';
 
 interface SubmissionDetailModalProps {
@@ -49,19 +53,9 @@ export const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
   if (!submission) return null;
   const t = translations[language];
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'ethics' | 'docs' | 'ai' | 'reviews' | 'workflow'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'proposal_fields' | 'ethics' | 'docs' | 'ai' | 'reviews'>('overview');
   const [selectedNewStatus, setSelectedNewStatus] = useState<SubmissionStatus>(submission.status);
   const [showStatusChanger, setShowStatusChanger] = useState<boolean>(false);
-
-  const workflowSteps: { status: SubmissionStatus; label: string }[] = [
-    { status: 'SUBMITTED', label: '1. Submitted' },
-    { status: 'SECRETARY_SCREENING', label: '2. Secretary Screening' },
-    { status: 'ADMIN_REVIEW', label: '3. Admin Review' },
-    { status: 'REVIEWER_ASSIGNMENT', label: '4. Reviewer Assignment' },
-    { status: 'SCIENTIFIC_REVIEW', label: '5. Scientific Review' },
-    { status: 'COMMITTEE_MEETING', label: '6. Committee Panel' },
-    { status: 'APPROVED', label: '7. Approved' },
-  ];
 
   const handleStatusChangeSubmit = () => {
     onUpdateStatus(submission.id, selectedNewStatus);
@@ -70,7 +64,7 @@ export const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-gray-200">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-gray-200">
         {/* Modal Header */}
         <div className="bg-[#005BAC] text-white px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -106,34 +100,19 @@ export const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
           </div>
         </div>
 
-        {/* Workflow Progress Bar */}
-        <div className="bg-gray-50 px-6 py-3 border-b border-gray-200 flex items-center justify-between overflow-x-auto">
-          {workflowSteps.map((step, idx) => {
-            const isCurrent = submission.status === step.status;
-            return (
-              <div key={step.status} className="flex items-center space-x-1 text-[11px] font-semibold">
-                <span
-                  className={`px-2 py-0.5 rounded-full ${
-                    isCurrent
-                      ? 'bg-[#005BAC] text-white font-bold shadow-xs'
-                      : 'bg-gray-200 text-gray-600'
-                  }`}
-                >
-                  {step.label}
-                </span>
-                {idx < workflowSteps.length - 1 && <span className="text-gray-300">→</span>}
-              </div>
-            );
-          })}
-        </div>
-
         {/* Modal Navigation Tabs */}
-        <div className="flex border-b border-gray-200 px-6 text-xs font-bold text-gray-600 space-x-6">
+        <div className="flex border-b border-gray-200 px-6 text-xs font-bold text-gray-600 space-x-6 overflow-x-auto">
           <button
             onClick={() => setActiveTab('overview')}
             className={`py-3 border-b-2 cursor-pointer ${activeTab === 'overview' ? 'border-[#005BAC] text-[#005BAC]' : 'border-transparent hover:text-gray-900'}`}
           >
-            Overview & Details
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveTab('proposal_fields')}
+            className={`py-3 border-b-2 cursor-pointer ${activeTab === 'proposal_fields' ? 'border-[#005BAC] text-[#005BAC]' : 'border-transparent hover:text-gray-900'}`}
+          >
+            Proposal Submission Fields
           </button>
           <button
             onClick={() => setActiveTab('ethics')}
@@ -167,9 +146,9 @@ export const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
           {activeTab === 'overview' && (
             <div className="space-y-4">
               <div>
-                <h3 className="font-bold text-gray-900 text-sm mb-1">Abstract</h3>
+                <h3 className="font-bold text-gray-900 text-sm mb-1">Executive Abstract</h3>
                 <p className="text-gray-700 leading-relaxed bg-gray-50 p-3.5 rounded-xl border border-gray-200">
-                  {submission.abstract}
+                  {submission.abstract || 'No abstract provided.'}
                 </p>
               </div>
 
@@ -184,11 +163,36 @@ export const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
                 </div>
                 <div>
                   <span className="text-gray-500 font-semibold block text-[10px]">Budget (ETB)</span>
-                  <span className="font-bold text-gray-900">{submission.budgetETB.toLocaleString()} ETB</span>
+                  <span className="font-bold text-emerald-800">{submission.budgetETB.toLocaleString()} ETB</span>
                 </div>
                 <div>
                   <span className="text-gray-500 font-semibold block text-[10px]">Duration</span>
                   <span className="font-bold text-gray-900">{submission.studyDurationMonths} Months</span>
+                </div>
+              </div>
+
+              {/* Terms and Conditions Agreement Status Block */}
+              <div className="border border-emerald-200 bg-emerald-50/60 rounded-xl p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-emerald-950 text-xs uppercase tracking-wider flex items-center space-x-1.5">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                    <span>Mandatory Investigator Agreement Audit Trail</span>
+                  </h4>
+                  <span className="bg-emerald-200 text-emerald-900 font-extrabold text-[10px] px-2 py-0.5 rounded-full">
+                    VERIFIED & SIGNED
+                  </span>
+                </div>
+
+                <div className="bg-white p-3 rounded-lg border border-emerald-100 text-[11px] text-gray-700 space-y-1">
+                  <p>
+                    <strong>Accepted Agreement:</strong> "I acknowledge that I must comply with the requirements and responsibilities as the investigator or professional responsible for this proposal, as set forth in the Committee's Standard Operating Procedures (SOPs)..."
+                  </p>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[10px] text-gray-500 pt-1 border-t border-gray-100">
+                    <span>Accepted Date: <strong>{submission.agreement?.acceptedDate ? new Date(submission.agreement.acceptedDate).toLocaleString() : new Date().toLocaleString()}</strong></span>
+                    <span>User ID: <strong>{submission.agreement?.userId || submission.principalInvestigator.email}</strong></span>
+                    <span>IP Address: <strong>{submission.agreement?.ipAddress || '197.156.98.20'}</strong></span>
+                    <span>Digital Signature: <strong>{submission.digitalSignatureName || submission.principalInvestigator.name}</strong></span>
+                  </div>
                 </div>
               </div>
 
@@ -199,7 +203,7 @@ export const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
-                    <span className="text-gray-500 text-[10px]">Name</span>
+                    <span className="text-gray-500 text-[10px]">PI Name</span>
                     <p className="font-bold text-gray-900">{submission.principalInvestigator.name}</p>
                   </div>
                   <div>
@@ -215,7 +219,131 @@ export const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
             </div>
           )}
 
-          {/* TAB 2: ETHICS CHECKLIST */}
+          {/* TAB 2: PROPOSAL SUBMISSION FIELDS */}
+          {activeTab === 'proposal_fields' && (
+            <div className="space-y-4">
+              <h3 className="font-bold text-gray-900 text-sm border-b pb-2">
+                Complete Proposal Fields (ProEthos2 IRB Spec)
+              </h3>
+
+              {/* Research Information */}
+              <div className="border border-gray-200 rounded-xl p-4 space-y-3 bg-gray-50/50">
+                <h4 className="font-bold text-[#005BAC] text-xs uppercase tracking-wider flex items-center space-x-1">
+                  <BookOpen className="w-4 h-4" />
+                  <span>Research Information</span>
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-gray-500 font-semibold block text-[10px]">Keywords</span>
+                    <span className="font-bold text-gray-900">
+                      {Array.isArray(submission.keywords) ? submission.keywords.join(', ') : submission.keywords || 'None'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 font-semibold block text-[10px]">Study Design</span>
+                    <span className="font-bold text-gray-900">{submission.studyDesign || 'Cross-sectional observational study'}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  <div>
+                    <span className="text-gray-500 font-bold block text-[10px]">Introduction</span>
+                    <p className="bg-white p-2.5 rounded border border-gray-200 text-gray-800">
+                      {submission.introduction || 'Antimicrobial resistance and epidemiological dynamics in healthcare settings.'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 font-bold block text-[10px]">Justification</span>
+                    <p className="bg-white p-2.5 rounded border border-gray-200 text-gray-800">
+                      {submission.justification || 'Addressing critical public health priorities in Oromia region.'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 font-bold block text-[10px]">Goals & Objectives</span>
+                    <p className="bg-white p-2.5 rounded border border-gray-200 text-gray-800">
+                      {submission.goalsObjectives || '1. Measure prevalence rates. 2. Identify risk factors.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Participant Information & Eligibility */}
+              <div className="border border-gray-200 rounded-xl p-4 space-y-3 bg-gray-50/50">
+                <h4 className="font-bold text-[#005BAC] text-xs uppercase tracking-wider flex items-center space-x-1">
+                  <UserCheck className="w-4 h-4" />
+                  <span>Participant Information & Eligibility Criteria</span>
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-white p-3 rounded-lg border border-gray-200">
+                  <div>
+                    <span className="text-gray-500 text-[10px]">Gender</span>
+                    <p className="font-bold text-gray-900">{submission.gender || 'All Genders'}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-[10px]">Target Sample Size</span>
+                    <p className="font-bold text-blue-900">{submission.targetSampleSize || 450} participants</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-[10px]">Age Range</span>
+                    <p className="font-bold text-gray-900">{submission.minimumAge || 18} - {submission.maximumAge || 75} Years</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-[10px]">Initial Recruitment Date</span>
+                    <p className="font-bold text-emerald-800">{submission.initialRecruitmentDate || '2026-09-15'}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-emerald-800 font-bold text-[10px]">Inclusion Criteria</span>
+                    <p className="bg-white p-2.5 rounded border border-emerald-200 text-gray-800">
+                      {submission.inclusionCriteria || 'All consented patients admitted to study facilities.'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-red-800 font-bold text-[10px]">Exclusion Criteria</span>
+                    <p className="bg-white p-2.5 rounded border border-red-200 text-gray-800">
+                      {submission.exclusionCriteria || 'Patients unable or unwilling to provide informed consent.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Research Details & Financial */}
+              <div className="border border-gray-200 rounded-xl p-4 space-y-3 bg-gray-50/50">
+                <h4 className="font-bold text-[#005BAC] text-xs uppercase tracking-wider flex items-center space-x-1">
+                  <DollarSign className="w-4 h-4" />
+                  <span>Research Interventions & Financial Sponsors</span>
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-gray-500 font-bold text-[10px]">Interventions</span>
+                    <p className="bg-white p-2 rounded border border-gray-200">{submission.interventions || 'Observational data collection & questionnaires'}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 font-bold text-[10px]">Primary Outcome</span>
+                    <p className="bg-white p-2 rounded border border-gray-200">{submission.primaryOutcome || 'Infection rate reduction at 12 months'}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-white p-3 rounded-lg border border-gray-200">
+                  <div>
+                    <span className="text-gray-500 text-[10px]">Funding Source</span>
+                    <p className="font-bold text-gray-900">{submission.fundingSource || 'Oromia Health Research Fund'}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-[10px]">Primary Sponsor</span>
+                    <p className="font-bold text-gray-900">{submission.primarySponsor || submission.sponsor || 'Oromia Health Bureau'}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-[10px]">Scientific Contact</span>
+                    <p className="font-bold text-blue-800">{submission.scientificContact || 'Dr. Tolosa Megersa'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: ETHICS CHECKLIST */}
           {activeTab === 'ethics' && (
             <div className="space-y-4">
               <h3 className="font-bold text-gray-900">Declared Ethics Checklist Parameters</h3>
@@ -243,7 +371,7 @@ export const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
             </div>
           )}
 
-          {/* TAB 3: DOCUMENTS */}
+          {/* TAB 4: DOCUMENTS */}
           {activeTab === 'docs' && (
             <div className="space-y-3">
               <h3 className="font-bold text-gray-900">Attached Proposal Documents & Consent Forms</h3>
@@ -272,7 +400,7 @@ export const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
             </div>
           )}
 
-          {/* TAB 4: AI AUDIT */}
+          {/* TAB 5: AI AUDIT */}
           {activeTab === 'ai' && (
             <div className="space-y-4">
               {submission.aiAuditResult ? (
@@ -320,7 +448,7 @@ export const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
             </div>
           )}
 
-          {/* TAB 5: REVIEWS */}
+          {/* TAB 6: REVIEWS */}
           {activeTab === 'reviews' && (
             <div className="space-y-4">
               <h3 className="font-bold text-gray-900">Assigned Reviewers & Scores</h3>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import ohbLogoImg from '../assets/logo/ohb-logo.png';
+import ohbWideLogo from '../assets/logo/OHB-WIDE-Logo.png';
 
 interface OromiaLogoProps {
   className?: string;
@@ -64,7 +64,7 @@ export const OromiaLogo: React.FC<OromiaLogoProps> = ({
       <div className={`flex items-center justify-center ${className}`}>
         {!imgError ? (
           <img
-            src={ohbLogoImg}
+            src={ohbWideLogo}
             alt="Oromia Health Bureau Wide Logo"
             className="h-16 sm:h-20 w-auto object-contain max-w-full"
             onError={() => setImgError(true)}
@@ -94,7 +94,7 @@ export const OromiaLogo: React.FC<OromiaLogoProps> = ({
       <div className={`inline-flex items-center justify-center ${sizeClasses[size]} ${className}`}>
         {!imgError ? (
           <img
-            src={ohbLogoImg}
+            src={ohbWideLogo}
             alt="OHB Emblem"
             className="w-full h-full object-contain"
             onError={() => setImgError(true)}
@@ -111,7 +111,7 @@ export const OromiaLogo: React.FC<OromiaLogoProps> = ({
       <div className={`flex items-center space-x-3.5 ${className}`}>
         <div className="h-12 w-auto shrink-0 p-1 bg-white rounded-xl shadow-xs border border-slate-100 flex items-center justify-center">
           {!imgError ? (
-            <img src={ohbLogoImg} alt="Oromia Health Bureau Logo" className="h-full w-auto object-contain" onError={() => setImgError(true)} />
+            <img src={ohbWideLogo} alt="Oromia Health Bureau Logo" className="h-full w-auto object-contain" onError={() => setImgError(true)} />
           ) : (
             EmblemSVG
           )}
@@ -138,7 +138,7 @@ export const OromiaLogo: React.FC<OromiaLogoProps> = ({
     <div className={`flex items-center space-x-2.5 ${className}`}>
       <div className="h-10 w-auto shrink-0 p-1 bg-white rounded-lg shadow-xs border border-slate-200/80 flex items-center justify-center">
         {!imgError ? (
-          <img src={ohbLogoImg} alt="OHB Logo" className="h-full w-auto object-contain" onError={() => setImgError(true)} />
+          <img src={ohbWideLogo} alt="OHB Logo" className="h-full w-auto object-contain" onError={() => setImgError(true)} />
         ) : (
           EmblemSVG
         )}

@@ -25,6 +25,7 @@ import {
   History,
   HelpCircle,
   LogOut,
+  Mail as MailIcon,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -66,6 +67,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const roleLabels: Record<UserRole, { en: string; om: string; am: string; bg: string }> = {
     SUPER_ADMIN: { en: 'Super Admin', om: 'Super Admin', am: 'ሱፐር አድሚን', bg: 'bg-purple-100 text-purple-800' },
+    ADMIN: { en: 'System Administrator', om: 'Bulchaa Mobaayilaa', am: 'ሲስተም አድሚን', bg: 'bg-blue-100 text-blue-800' },
     IRB_ADMIN: { en: 'IRB Administrator', om: 'Bulchaa IRB', am: 'የIRB አስተዳዳሪ', bg: 'bg-blue-100 text-blue-800' },
     IRB_CHAIR: { en: 'IRB Chairperson', om: 'Dura Taa\'aa IRB', am: 'የIRB ሰብሳቢ', bg: 'bg-emerald-100 text-emerald-800' },
     SECRETARY: { en: 'IRB Secretary', om: 'Sekreetarii IRB', am: 'የIRB ጸሐፊ', bg: 'bg-amber-100 text-amber-800' },
@@ -82,7 +84,6 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Top National/Regional Banner */}
       <div className="bg-[#005BAC] text-white px-4 py-1.5 text-xs font-medium flex justify-between items-center">
         <div className="flex items-center space-x-2 truncate">
-          <span className="bg-amber-400 text-gray-900 px-1.5 py-0.5 rounded font-bold text-[10px]">ETHIOPIA</span>
           <span className="font-semibold">{t.bureauName}</span>
           <span className="hidden sm:inline opacity-75">|</span>
           <span className="hidden md:inline text-blue-100 truncate">{t.irbFullName}</span>
@@ -282,6 +283,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <SettingsIcon className="w-3.5 h-3.5 text-slate-400" />
                       <span>Settings</span>
                     </button>
+
+                    {currentRole === 'SUPER_ADMIN' && (
+                      <button
+                        onClick={() => {
+                          setIsProfileMenuOpen(false);
+                          onNavigateTab?.('email-config');
+                        }}
+                        className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-blue-50 hover:text-[#005BAC] font-medium flex items-center space-x-2.5 transition-colors cursor-pointer"
+                      >
+                        <MailIcon className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Email Configuration</span>
+                      </button>
+                    )}
 
                     <button
                       onClick={() => {

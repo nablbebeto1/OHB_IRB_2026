@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   LogOut,
   HardDrive,
+  Mail,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -116,6 +117,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: t.navSettings,
       icon: Settings,
       roles: ['SUPER_ADMIN', 'IRB_ADMIN'],
+    },
+    {
+      id: 'email-config',
+      label: 'Email Configuration',
+      icon: Mail,
+      roles: ['SUPER_ADMIN'],
     },
     {
       id: 'public-portal',

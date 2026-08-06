@@ -37,6 +37,7 @@ import { CertificateGeneratorModal } from './components/CertificateGeneratorModa
 import { CertificateVerificationView } from './components/CertificateVerificationView';
 import { ReportsAnalyticsView } from './components/ReportsAnalyticsView';
 import { UserManagementView } from './components/UserManagementView';
+import { SmtpConfigView } from './components/SmtpConfigView';
 import { GoogleDriveView } from './components/GoogleDriveView';
 import { OromiaLogo } from './components/OromiaLogo';
 import { LoginPage } from './components/LoginPage';
@@ -367,6 +368,7 @@ export default function App() {
         language={language}
         onLanguageChange={setLanguage}
         onLoginSuccess={handleLoginSuccess}
+        onRegisterUser={(newUser) => setUsers((prev) => [newUser, ...prev])}
       />
     );
   }
@@ -841,7 +843,15 @@ export default function App() {
             </div>
           )}
 
-          {/* 12. GUEST PUBLIC PORTAL */}
+          {/* 11.5 EMAIL CONFIGURATION (SMTP) - SUPER_ADMIN ONLY */}
+          {activeTab === 'email-config' && (
+            <SmtpConfigView
+              currentUser={currentUser}
+              onSaveSmtpSettings={(newSmtp) => {
+                setSettings((prev) => ({ ...prev, smtpConfig: newSmtp }));
+              }}
+            />
+          )}
           {activeTab === 'public-portal' && (
             <div className="space-y-8 max-w-4xl mx-auto py-4">
               <div className="bg-gradient-to-r from-[#003B73] to-[#005BAC] text-white p-8 rounded-2xl shadow-xl text-center space-y-4 border-b-4 border-amber-400">
@@ -1043,9 +1053,6 @@ export default function App() {
 
           <div className="text-[11px] text-center md:text-right text-slate-400 space-y-0.5">
             <p>© 2026 OHB Directorate of Health Research & Technology Transfer. All Rights Reserved.</p>
-            <p className="text-[10px] text-slate-500">
-              Compliant with WHO, CIOMS, Declaration of Helsinki, GCP & Ethiopian National Ethics Guidelines.
-            </p>
           </div>
         </div>
       </footer>
