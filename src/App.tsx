@@ -12,6 +12,7 @@ import {
   NotificationItem,
   SystemSettings,
   ReviewScoreCard,
+  BrandingSettings,
 } from './types';
 import {
   initialUsers,
@@ -35,9 +36,12 @@ import { CommitteeMeetingModule } from './components/CommitteeMeetingModule';
 import { ResearchMonitoringModule } from './components/ResearchMonitoringModule';
 import { CertificateGeneratorModal } from './components/CertificateGeneratorModal';
 import { CertificateVerificationView } from './components/CertificateVerificationView';
+import { CertificatesArchiveView } from './components/CertificatesArchiveView';
 import { ReportsAnalyticsView } from './components/ReportsAnalyticsView';
 import { UserManagementView } from './components/UserManagementView';
 import { SmtpConfigView } from './components/SmtpConfigView';
+import { BrandingSettingsView } from './components/BrandingSettingsView';
+import { AboutOdmcView } from './components/AboutOdmcView';
 import { GoogleDriveView } from './components/GoogleDriveView';
 import { OromiaLogo } from './components/OromiaLogo';
 import { LoginPage } from './components/LoginPage';
@@ -94,6 +98,40 @@ export default function App() {
   // Submissions Tab Filter State
   const [submissionFilterStatus, setSubmissionFilterStatus] = useState<string>('ALL');
   const [submissionFilterType, setSubmissionFilterType] = useState<string>('ALL');
+
+  // Load backend database submissions and branding settings on mount
+  useEffect(() => {
+    let isMounted = true;
+
+    // Fetch Submissions
+    fetch('/api/submissions')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && data.success && Array.isArray(data.data) && isMounted) {
+          console.log(`[Frontend] Successfully synchronized ${data.data.length} submissions from backend server.`);
+          setSubmissions(data.data);
+        }
+      })
+      .catch((err) => console.error('[Frontend] Submissions fetch error:', err));
+
+    // Fetch System Branding & Identity
+    fetch('/api/branding')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && data.success && data.data && isMounted) {
+          setSettings((prev) => ({
+            ...prev,
+            ...data.data.systemIdentity,
+            brandingSettings: data.data.brandingSettings,
+          }));
+        }
+      })
+      .catch((err) => console.error('[Frontend] Branding fetch error:', err));
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const t = translations[language];
 
@@ -164,6 +202,8 @@ export default function App() {
 
   // Update Submission Status & Append Audit Log
   const handleUpdateStatus = (submissionId: string, newStatus: SubmissionStatus) => {
+    let updatedSub: Submission | null = null;
+
     setSubmissions((prev) =>
       prev.map((sub) => {
         if (sub.id === submissionId) {
@@ -179,16 +219,26 @@ export default function App() {
               }
             : sub.approvalCertificate;
 
-          return {
+          updatedSub = {
             ...sub,
             status: newStatus,
             updatedAt: new Date().toISOString(),
             approvalCertificate: approvalCert,
           };
+          return updatedSub;
         }
         return sub;
       })
     );
+
+    // Sync with backend API
+    if (updatedSub) {
+      fetch(`/api/submissions/${submissionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedSub),
+      }).catch((err) => console.error('[Frontend] Sync submission error:', err));
+    }
 
     // Append Audit Log
     const targetSub = submissions.find((s) => s.id === submissionId);
@@ -212,7 +262,7 @@ export default function App() {
         id: `notif-${Date.now()}`,
         userId: targetSub.principalInvestigator.email,
         title: `Protocol Status Changed`,
-        message: `Your protocol ${targetSub.refNo} status has been updated to ${newStatus.replace('_', ' ')}.`,
+        message: `Your protocol ${targetSub.refNo} status has been updated to ${newStatus.replace(/_/g, ' ')}.`,
         timestamp: new Date().toISOString(),
         read: false,
         type: newStatus === 'APPROVED' ? 'APPROVAL' : 'SUBMISSION',
@@ -224,7 +274,10 @@ export default function App() {
 
   // Create New Submission
   const handleSubmitNewProtocol = (newSub: Submission) => {
-    setSubmissions((prev) => [newSub, ...prev]);
+    setSubmissions((prev) => {
+      const exists = prev.some((s) => s.id === newSub.id || s.refNo === newSub.refNo);
+      return exists ? prev.map((s) => (s.id === newSub.id ? newSub : s)) : [newSub, ...prev];
+    });
 
     // Audit Log
     const newLog: AuditLog = {
@@ -338,6 +391,56 @@ export default function App() {
     );
   };
 
+  const handleUpdateUserPermissions = async (userId: string, permissions: string[], newRole?: UserRole) => {
+    try {
+      await fetch(`/api/users/${userId}/permissions`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ permissions, role: newRole }),
+      });
+    } catch (err) {
+      console.warn('Backend permissions sync warning:', err);
+    }
+
+    setUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === userId) {
+          return {
+            ...u,
+            role: newRole || u.role,
+            customPermissions: permissions,
+          };
+        }
+        return u;
+      })
+    );
+  };
+
+  const handleUpdateUserAvatar = async (userId: string, avatarUrl: string) => {
+    try {
+      await fetch(`/api/users/${userId}/avatar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatarUrl }),
+      });
+    } catch (err) {
+      console.warn('Backend avatar sync warning:', err);
+    }
+
+    setUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === userId) {
+          return {
+            ...u,
+            avatarUrl,
+            avatar: avatarUrl,
+          };
+        }
+        return u;
+      })
+    );
+  };
+
   // Filtered Submissions for Submissions List tab
   const filteredSubmissions = submissions.filter((s) => {
     const matchesSearch =
@@ -366,6 +469,7 @@ export default function App() {
       <LoginPage
         users={users}
         language={language}
+        brandingSettings={settings.brandingSettings}
         onLanguageChange={setLanguage}
         onLoginSuccess={handleLoginSuccess}
         onRegisterUser={(newUser) => setUsers((prev) => [newUser, ...prev])}
@@ -386,6 +490,7 @@ export default function App() {
         calendar={calendar}
         onCalendarChange={setCalendar}
         notifications={notifications}
+        brandingSettings={settings.brandingSettings}
         onOpenNotifications={() => setIsNotificationsOpen(true)}
         onOpenSearch={() => setIsSearchOpen(true)}
         onOpenPublicPortal={() => setActiveTab('public-portal')}
@@ -402,6 +507,7 @@ export default function App() {
           language={language}
           pendingReviewsCount={pendingReviewsCount}
           upcomingMeetingsCount={upcomingMeetingsCount}
+          brandingSettings={settings.brandingSettings}
           onOpenLogoutModal={() => setIsLogoutModalOpen(true)}
         />
 
@@ -416,6 +522,7 @@ export default function App() {
               currentRole={currentRole}
               language={language}
               calendar={calendar}
+              brandingSettings={settings.brandingSettings}
               onSelectSubmission={(sub) => setSelectedSubmission(sub)}
               onNavigateTab={setActiveTab}
             />
@@ -633,68 +740,16 @@ export default function App() {
             />
           )}
 
-          {/* 7. CERTIFICATES GALLERY */}
+          {/* 7. SEARCHABLE CERTIFICATE REPOSITORY & ARCHIVE */}
           {activeTab === 'certificates' && (
-            <div className="space-y-6">
-              <div className="bg-[#005BAC] text-white p-6 rounded-2xl shadow-md flex justify-between items-center">
-                <div>
-                  <div className="flex items-center space-x-2 text-amber-300 text-xs font-bold uppercase tracking-wider">
-                    <Award className="w-4 h-4" />
-                    <span>Official Ethics Clearance Repository</span>
-                  </div>
-                  <h1 className="text-2xl font-extrabold mt-1">Ethics Clearance Certificates</h1>
-                  <p className="text-blue-100 text-xs mt-1">
-                    Download and verify official digital ethical clearance credentials issued by OHB IRB.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {submissions
-                  .filter((s) => s.status === 'APPROVED')
-                  .map((sub) => (
-                    <div key={sub.id} className="geo-card p-5 flex flex-col justify-between space-y-4">
-                      <div>
-                        <div className="flex justify-between items-start">
-                          <span className="geo-badge-gold text-xs font-mono font-bold px-2.5 py-1 rounded-md">
-                            {sub.refNo}
-                          </span>
-                          <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-200">
-                            ACTIVE CLEARANCE
-                          </span>
-                        </div>
-                        <h3 className="font-bold text-slate-900 text-sm mt-3 leading-snug line-clamp-2">
-                          {sub.title}
-                        </h3>
-                        <p className="text-xs text-slate-500 mt-2">
-                          <strong>Investigator:</strong> {sub.principalInvestigator.name}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          <strong>Institution:</strong> {sub.principalInvestigator.institution}
-                        </p>
-                      </div>
-
-                      <div className="pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
-                        <span className="text-slate-500">
-                          Valid until:{' '}
-                          {formatDateWithCalendar(
-                            sub.approvalCertificate?.expiryDate || new Date().toISOString(),
-                            calendar,
-                            language
-                          )}
-                        </span>
-                        <button
-                          onClick={() => setSelectedCertSubmission(sub)}
-                          className="bg-[#005BAC] hover:bg-blue-800 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center space-x-1.5"
-                        >
-                          <Award className="w-3.5 h-3.5 text-amber-300" />
-                          <span>View Certificate</span>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </div>
+            <CertificatesArchiveView
+              submissions={submissions}
+              language={language}
+              calendar={calendar}
+              brandingSettings={settings.brandingSettings}
+              onSelectSubmissionForCert={(sub) => setSelectedCertSubmission(sub)}
+              onVerifyPublic={handleOpenVerifyPublic}
+            />
           )}
 
           {/* 7.5. GOOGLE DRIVE WORKSPACE & CERTIFICATE SYNC */}
@@ -713,6 +768,7 @@ export default function App() {
               language={language}
               calendar={calendar}
               initialRefNo={verificationRefNo}
+              brandingSettings={settings.brandingSettings}
               onBackToDashboard={() => setActiveTab('dashboard')}
             />
           )}
@@ -779,6 +835,8 @@ export default function App() {
                 users={users}
                 language={language}
                 onUpdateRole={handleUpdateUserRole}
+                onUpdatePermissions={handleUpdateUserPermissions}
+                onUpdateAvatar={handleUpdateUserAvatar}
               />
 
               {/* System Configuration Section */}
@@ -852,12 +910,34 @@ export default function App() {
               }}
             />
           )}
+
+          {/* 11.6 BRANDING & LOGO SETTINGS - SUPER_ADMIN ONLY */}
+          {activeTab === 'branding' && (
+            <BrandingSettingsView
+              currentUser={currentUser}
+              systemSettings={settings}
+              onSaveBranding={(updatedBranding, updatedIdentity) => {
+                setSettings((prev) => ({
+                  ...prev,
+                  ...updatedIdentity,
+                  brandingSettings: updatedBranding,
+                }));
+              }}
+            />
+          )}
           {activeTab === 'public-portal' && (
             <div className="space-y-8 max-w-4xl mx-auto py-4">
               <div className="bg-gradient-to-r from-[#003B73] to-[#005BAC] text-white p-8 rounded-2xl shadow-xl text-center space-y-4 border-b-4 border-amber-400">
-                <div className="mx-auto flex justify-center">
-                  <OromiaLogo variant="emblem" size="lg" />
-                </div>
+                {(settings.brandingSettings?.public_page_logo || settings.brandingSettings?.login_page_logo || settings.brandingSettings?.header_logo) ? (
+                  <div className="mx-auto flex justify-center">
+                    <OromiaLogo
+                      variant="emblem"
+                      size="lg"
+                      logoUrl={settings.brandingSettings?.public_page_logo || settings.brandingSettings?.login_page_logo || settings.brandingSettings?.header_logo}
+                      alt="Portal Logo"
+                    />
+                  </div>
+                ) : null}
                 <h1 className="text-3xl font-extrabold tracking-tight">Oromia Health Bureau IRB Portal</h1>
                 <p className="text-blue-100 text-sm max-w-xl mx-auto leading-relaxed">
                   Welcome to the official public portal for research ethics oversight in Oromia Regional State, Ethiopia.
@@ -908,8 +988,35 @@ export default function App() {
               </div>
             </div>
           )}
+
+          {/* 12. ABOUT ODMC PAGE */}
+          {activeTab === 'about-odmc' && (
+            <AboutOdmcView
+              brandingSettings={settings.brandingSettings}
+              systemSettings={settings}
+              language={language}
+              onNavigateTab={setActiveTab}
+            />
+          )}
         </main>
       </div>
+
+      {/* Global Application Footer */}
+      {(settings.brandingSettings?.developed_by_text || settings.brandingSettings?.organization_name) && (
+        <footer className="w-full bg-slate-900 text-slate-400 py-6 text-xs text-center border-t border-slate-800 space-y-1 mt-auto">
+          <p className="font-medium text-slate-300">
+            Developed and Maintained by{' '}
+            <strong className="text-amber-300 font-bold">
+              {settings.brandingSettings?.developed_by_text || settings.brandingSettings?.organization_name}
+            </strong>
+          </p>
+          {settings.brandingSettings?.office_address && (
+            <p className="text-[11px] text-slate-500">
+              {settings.brandingSettings.office_address}
+            </p>
+          )}
+        </footer>
+      )}
 
       {/* Global Modals */}
 
@@ -935,6 +1042,7 @@ export default function App() {
           submission={selectedCertSubmission}
           language={language}
           calendar={calendar}
+          brandingSettings={settings.brandingSettings}
           onClose={() => setSelectedCertSubmission(null)}
           onVerifyPublic={(refNo) => {
             setSelectedCertSubmission(null);
@@ -1046,13 +1154,13 @@ export default function App() {
           <div className="flex items-center space-x-3">
             <OromiaLogo variant="emblem" size="md" />
             <div>
-              <p className="font-bold text-white text-xs">Oromia Health Bureau Ethical Review Portal</p>
-              <p className="text-[10px] text-slate-500">Biiroo Fayyaa Oromiyaa • Government of Oromia Regional State, Ethiopia</p>
+              <p className="font-bold text-white text-xs">{settings.systemName || 'Oromia Health Bureau Ethical Review Portal'}</p>
+              <p className="text-[10px] text-slate-500">{settings.organizationName || 'Oromia Health Bureau'} • Institutional Review Board</p>
             </div>
           </div>
 
           <div className="text-[11px] text-center md:text-right text-slate-400 space-y-0.5">
-            <p>© 2026 OHB Directorate of Health Research & Technology Transfer. All Rights Reserved.</p>
+            <p>© {new Date().getFullYear()} {settings.organizationName || 'Oromia Health Bureau'}. All Rights Reserved.</p>
           </div>
         </div>
       </footer>

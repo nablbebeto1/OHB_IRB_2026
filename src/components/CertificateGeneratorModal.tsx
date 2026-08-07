@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { OromiaLogo } from './OromiaLogo';
-import { Submission, Language, CalendarType } from '../types';
+import { Submission, Language, CalendarType, BrandingSettings } from '../types';
 import { translations } from '../utils/i18n';
 import { formatDateWithCalendar } from '../utils/calendar';
 import {
@@ -28,16 +28,20 @@ interface CertificateGeneratorModalProps {
   submission: Submission | null;
   language: Language;
   calendar: CalendarType;
+  brandingSettings?: BrandingSettings;
   onClose: () => void;
   onVerifyPublic: (refNo: string) => void;
+  onRegenerateCertificate?: (submissionId: string) => Promise<void> | void;
 }
 
 export const CertificateGeneratorModal: React.FC<CertificateGeneratorModalProps> = ({
   submission,
   language,
   calendar,
+  brandingSettings,
   onClose,
   onVerifyPublic,
+  onRegenerateCertificate,
 }) => {
   if (!submission) return null;
   const t = translations[language];
@@ -48,6 +52,8 @@ export const CertificateGeneratorModal: React.FC<CertificateGeneratorModalProps>
   const totalPages = 1; // Single official certificate page
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [regeneratedMsg, setRegeneratedMsg] = useState('');
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -58,6 +64,20 @@ export const CertificateGeneratorModal: React.FC<CertificateGeneratorModalProps>
     signatureName: 'Prof. Gemechu Hunduma (Chairperson)',
     qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(submission.refNo)}`,
     verificationUrl: `/verify/${encodeURIComponent(submission.refNo)}`,
+  };
+
+  const handleRegenerate = async () => {
+    if (!onRegenerateCertificate) return;
+    setIsRegenerating(true);
+    try {
+      await onRegenerateCertificate(submission.id);
+      setRegeneratedMsg('Certificate regenerated! Ref No retained.');
+      setTimeout(() => setRegeneratedMsg(''), 4000);
+    } catch (err) {
+      console.error('Failed to regenerate certificate:', err);
+    } finally {
+      setIsRegenerating(false);
+    }
   };
 
   const [isExportingDrive, setIsExportingDrive] = useState(false);
@@ -276,6 +296,22 @@ export const CertificateGeneratorModal: React.FC<CertificateGeneratorModalProps>
 
         {/* Right Section: Print, Download, Fullscreen, Close */}
         <div className="flex items-center space-x-2 shrink-0">
+          {onRegenerateCertificate && (
+            <button
+              onClick={handleRegenerate}
+              disabled={isRegenerating}
+              className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs flex items-center space-x-1 cursor-pointer shadow-sm transition-colors disabled:opacity-50"
+              title="Regenerate Certificate (retains Ref No)"
+            >
+              {isRegenerating ? (
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
+              ) : (
+                <RotateCw className="w-4 h-4 text-white" />
+              )}
+              <span className="hidden lg:inline">{isRegenerating ? 'Regenerating...' : 'Regenerate'}</span>
+            </button>
+          )}
+
           <button
             onClick={handlePrint}
             className="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center space-x-1 cursor-pointer shadow-sm"
@@ -372,23 +408,32 @@ export const CertificateGeneratorModal: React.FC<CertificateGeneratorModalProps>
             transformOrigin: 'center center',
             transition: 'transform 0.15s ease-out',
           }}
-          className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full flex flex-col overflow-hidden border border-gray-200 print:shadow-none print:border-none print:max-w-none print:transform-none"
+          className="bg-white rounded-2xl shadow-2xl max-w-[210mm] w-full min-h-[297mm] aspect-[1/1.414] flex flex-col justify-between overflow-hidden border border-gray-200 print:shadow-none print:border-none print:max-w-none print:w-full print:h-full print:transform-none"
         >
           {/* CERTIFICATE PRINTABLE CONTENT */}
-          <div className="p-8 sm:p-12 space-y-8 border-8 border-double border-[#005BAC] m-4 rounded-xl bg-gradient-to-b from-blue-50/20 via-white to-amber-50/20 relative">
+          <div className="p-8 sm:p-12 space-y-6 border-8 border-double border-[#005BAC] m-4 rounded-xl bg-gradient-to-b from-blue-50/20 via-white to-amber-50/20 relative overflow-hidden flex-1 flex flex-col justify-between">
             {/* Header Seals */}
             <div className="text-center space-y-2">
-              <div className="mx-auto flex justify-center pb-1">
-                <OromiaLogo variant="emblem" size="lg" />
+              <div className="mx-auto flex justify-center items-center h-16 pb-1">
+                {brandingSettings?.certificate_logo ? (
+                  <img
+                    src={`${brandingSettings.certificate_logo}${
+                      brandingSettings.certificate_logo.includes('data:')
+                        ? ''
+                        : `?v=${brandingSettings.cache_version || Date.now()}`
+                    }`}
+                    alt="Certificate Header Logo"
+                    className="max-h-full max-w-xs object-contain"
+                  />
+                ) : (
+                  <OromiaLogo variant="emblem" size="lg" />
+                )}
               </div>
 
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">
-                OROMIA NATIONAL REGIONAL STATE
-              </h3>
               <h1 className="text-xl sm:text-2xl font-extrabold text-[#005BAC] tracking-tight">
                 OROMIA HEALTH BUREAU
               </h1>
-              <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider border-b border-t border-gray-300 py-1 inline-block px-4">
+              <h2 className="text-xs sm:text-sm font-bold text-gray-800 uppercase tracking-wider border-b border-t border-gray-300 py-1 inline-block px-4">
                 INSTITUTIONAL REVIEW BOARD (OHB-IRB) ETHICAL CLEARANCE
               </h2>
             </div>
@@ -443,22 +488,35 @@ export const CertificateGeneratorModal: React.FC<CertificateGeneratorModalProps>
             </div>
 
             {/* Signatures & Verification QR Code */}
-            <div className="pt-6 border-t border-gray-300 flex items-center justify-between">
-              <div className="space-y-2">
-                <div className="font-serif italic text-sm font-bold text-blue-900 underline decoration-amber-400">
-                  Prof. Gemechu Hunduma
+            <div className="pt-6 border-t border-gray-300 flex items-center justify-between relative">
+              <div className="space-y-1">
+                <div className="h-10 flex items-center">
+                  {brandingSettings?.signature_image ? (
+                    <img
+                      src={brandingSettings.signature_image}
+                      alt="Chairperson Signature"
+                      className="max-h-full object-contain"
+                    />
+                  ) : (
+                    <div className="font-serif italic text-sm font-bold text-blue-900 underline decoration-amber-400">
+                      {brandingSettings?.signatory_name || 'Prof. Gemechu Hunduma'}
+                    </div>
+                  )}
                 </div>
-                <p className="text-[10px] font-bold text-gray-700 uppercase">
-                  Chairperson, OHB Institutional Review Board
+                <p className="text-[11px] font-extrabold text-gray-900 border-t border-gray-400 pt-0.5">
+                  {brandingSettings?.signatory_name || 'Prof. Gemechu Hunduma'}
                 </p>
-                <div className="flex items-center space-x-1 text-[10px] text-emerald-700 font-bold">
+                <p className="text-[10px] font-bold text-gray-600 uppercase">
+                  {brandingSettings?.signatory_title || 'Chairperson, OHB Institutional Review Board'}
+                </p>
+                <div className="flex items-center space-x-1 text-[10px] text-emerald-700 font-bold pt-1">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>Digitally Verified Signature</span>
                 </div>
               </div>
 
               {/* QR Code */}
-              <div className="text-center space-y-1">
+              <div className="text-center space-y-1 z-10">
                 <img
                   src={cert.qrCodeUrl}
                   alt="Verification QR Code"
@@ -471,6 +529,42 @@ export const CertificateGeneratorModal: React.FC<CertificateGeneratorModalProps>
                   Verify Online
                 </button>
               </div>
+
+              {/* Official Stamp Overlay */}
+              {brandingSettings?.stamp_enabled !== false && (
+                <div
+                  className={`absolute bottom-0 ${
+                    brandingSettings?.stamp_position === 'bottom-center'
+                      ? 'left-1/2 -translate-x-1/2'
+                      : brandingSettings?.stamp_position === 'bottom-left'
+                      ? 'left-24'
+                      : 'right-24'
+                  } pointer-events-none z-0`}
+                >
+                  {brandingSettings?.certificate_stamp ? (
+                    <img
+                      src={brandingSettings.certificate_stamp}
+                      alt="Official Stamp"
+                      style={{
+                        width: `${brandingSettings.stamp_size || 130}px`,
+                        opacity: brandingSettings.stamp_opacity ?? 0.85,
+                      }}
+                      className="object-contain"
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: `${brandingSettings?.stamp_size || 130}px`,
+                        height: `${brandingSettings?.stamp_size || 130}px`,
+                        opacity: brandingSettings?.stamp_opacity ?? 0.85,
+                      }}
+                      className="rounded-full border-4 border-dashed border-[#005BAC] flex items-center justify-center p-2 text-center text-[9px] font-bold text-[#005BAC] bg-blue-50/20"
+                    >
+                      OFFICIAL OHB-IRB APPROVAL STAMP
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Official Seal Footer */}

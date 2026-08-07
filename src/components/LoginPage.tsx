@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { OromiaLogo } from './OromiaLogo';
-import { User, UserRole, Language } from '../types';
+import { AboutOdmcView } from './AboutOdmcView';
+import { User, UserRole, Language, BrandingSettings } from '../types';
 import {
   Lock,
   Mail,
@@ -16,11 +17,14 @@ import {
   CheckCircle2,
   Building,
   KeyRound,
+  ArrowLeft,
+  Building2,
 } from 'lucide-react';
 
 interface LoginPageProps {
   users: User[];
   language: Language;
+  brandingSettings?: BrandingSettings;
   onLanguageChange: (lang: Language) => void;
   onLoginSuccess: (user: User) => void;
   onRegisterUser?: (newUser: User) => void;
@@ -29,6 +33,7 @@ interface LoginPageProps {
 export const LoginPage: React.FC<LoginPageProps> = ({
   users,
   language,
+  brandingSettings,
   onLanguageChange,
   onLoginSuccess,
   onRegisterUser,
@@ -64,6 +69,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const [createdUserWelcome, setCreatedUserWelcome] = useState<User | null>(null);
 
   // Quick Preset Role Selection helper
+  const [showAboutView, setShowAboutView] = useState(false);
+
   const handleSelectPreset = (role: UserRole) => {
     setSelectedRolePreset(role);
     const matchedUser = users.find((u) => u.role === role) || users[0];
@@ -211,8 +218,59 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     }
   };
 
+  if (showAboutView) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
+        <header className="bg-[#002D59] text-white py-3 px-6 shadow-md flex items-center justify-between sticky top-0 z-50 border-b-2 border-amber-400">
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setShowAboutView(false)}
+              className="bg-white/10 hover:bg-white/20 text-white font-bold px-3 py-1.5 rounded-lg text-xs flex items-center space-x-1.5 transition-all cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Sign In</span>
+            </button>
+            {brandingSettings?.organization_name && (
+              <span className="text-xs font-semibold text-blue-200 hidden sm:inline">
+                {brandingSettings.organization_name} {brandingSettings.organization_short_name ? `(${brandingSettings.organization_short_name})` : ''}
+              </span>
+            )}
+          </div>
+
+          {brandingSettings?.organization_short_name && (
+            <div className="flex items-center space-x-3 text-xs">
+              <span className="text-amber-300 font-mono font-bold bg-amber-400/20 px-2.5 py-0.5 rounded border border-amber-300/30">
+                {brandingSettings.organization_short_name} PORTAL
+              </span>
+            </div>
+          )}
+        </header>
+
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto">
+          <AboutOdmcView brandingSettings={brandingSettings} />
+        </main>
+
+        {(brandingSettings?.developed_by_text || brandingSettings?.organization_name) && (
+          <footer className="w-full bg-slate-900 text-slate-400 py-6 text-xs text-center border-t border-slate-800 space-y-1">
+            <p className="font-medium text-slate-300">
+              Developed and Maintained by{' '}
+              <strong className="text-amber-300 font-bold">
+                {brandingSettings?.developed_by_text || brandingSettings?.organization_name}
+              </strong>
+            </p>
+            {brandingSettings?.office_address && (
+              <p className="text-[11px] text-slate-500">
+                {brandingSettings.office_address}
+              </p>
+            )}
+          </footer>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-8 font-sans">
+    <div className="min-h-screen bg-slate-100 flex flex-col justify-between items-center p-4 sm:p-6 lg:p-8 font-sans space-y-8">
       <div className="max-w-5xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200 grid grid-cols-1 lg:grid-cols-12 min-h-[640px]">
         {/* Left Column: System Branding & Research Illustration Panel */}
         <div className="lg:col-span-6 bg-gradient-to-br from-[#003B73] via-[#005BAC] to-blue-900 text-white p-8 sm:p-10 flex flex-col justify-between relative overflow-hidden">
@@ -222,9 +280,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
           {/* Top Branding Section */}
           <div className="space-y-6 relative z-10">
-            <div className="bg-white/95 backdrop-blur-md p-3.5 rounded-2xl shadow-lg border border-white/20 inline-block">
-              <OromiaLogo variant="wide" />
-            </div>
+            {(brandingSettings?.login_page_logo || brandingSettings?.public_page_logo || brandingSettings?.header_logo) ? (
+              <div className="bg-white/95 backdrop-blur-md p-3.5 rounded-2xl shadow-lg border border-white/20 inline-block">
+                <OromiaLogo
+                  variant="wide"
+                  logoUrl={brandingSettings?.login_page_logo || brandingSettings?.public_page_logo || brandingSettings?.header_logo}
+                  alt="Login Logo"
+                />
+              </div>
+            ) : null}
 
             <div className="space-y-2">
               <div className="inline-flex items-center space-x-2 bg-amber-400/20 text-amber-300 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase border border-amber-300/30">
@@ -249,9 +313,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             <div className="bg-white/10 backdrop-blur-xs p-3.5 rounded-xl border border-white/10 flex items-start space-x-3">
               <Award className="w-5 h-5 text-amber-300 shrink-0 mt-0.5" />
               <div>
-                <h4 className="font-bold text-xs text-white">WHO & GCP Compliant Governance</h4>
-                <p className="text-[11px] text-blue-100">
-                  Adheres strictly to Ethiopian National Ethics Guidelines, CIOMS & Declaration of Helsinki standards.
+                <h4 className="font-bold text-xs text-white">Secure Digital Ethical Review Platform</h4>
+                <p className="text-[11px] text-blue-100 leading-relaxed">
+                  Our platform provides a secure, transparent, and efficient digital environment for researchers, reviewers, institutions, and administrators to manage the ethical review process from protocol submission to final approval.
                 </p>
               </div>
             </div>
@@ -276,7 +340,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
         {/* Right Column: Authentication Card & Form */}
         <div className="lg:col-span-6 p-8 sm:p-10 flex flex-col justify-between bg-white">
-          {/* Top Right Header: Language Switcher & Auth Mode Toggle */}
+          {/* Top Right Header: Language Switcher, About ODMC & Auth Mode Toggle */}
           <div className="flex justify-between items-center pb-4 border-b border-slate-100">
             {/* Mode Switcher Tabs */}
             <div className="flex bg-slate-100 p-1 rounded-xl">
@@ -305,6 +369,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             </div>
 
             <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={() => setShowAboutView(true)}
+                className="flex items-center space-x-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              >
+                <Building2 className="w-3.5 h-3.5 text-amber-600" />
+                <span>{brandingSettings?.organization_short_name ? `About ${brandingSettings.organization_short_name}` : 'About Us'}</span>
+              </button>
               <Globe className="w-4 h-4 text-slate-400" />
               <select
                 value={language}
@@ -568,6 +640,52 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Powered by Organization Section - Only if organization configured */}
+      {brandingSettings?.organization_name && (
+        <div className="max-w-5xl w-full mx-auto">
+          <div className="bg-gradient-to-r from-[#002D59] via-[#005BAC] to-[#002D59] text-white rounded-3xl p-6 sm:p-8 shadow-xl border-b-4 border-amber-400 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="space-y-2 text-center md:text-left">
+              <div className="inline-flex items-center space-x-1.5 bg-amber-400/20 text-amber-300 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border border-amber-300/30">
+                <Building className="w-3.5 h-3.5" />
+                <span>Digital Infrastructure</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-extrabold text-white">
+                Powered by {brandingSettings.organization_name} {brandingSettings.organization_short_name ? `(${brandingSettings.organization_short_name})` : ''}
+              </h3>
+              {brandingSettings.about_organization && (
+                <p className="text-xs sm:text-sm text-blue-100 max-w-2xl leading-relaxed">
+                  {brandingSettings.about_organization}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={() => setShowAboutView(true)}
+              className="shrink-0 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold px-5 py-3 rounded-xl shadow-md transition-all text-xs flex items-center space-x-2 cursor-pointer"
+            >
+              <span>Learn More</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Global Footer */}
+      {(brandingSettings?.developed_by_text || brandingSettings?.organization_name) && (
+        <footer className="w-full bg-slate-900 text-slate-400 py-6 text-xs text-center rounded-2xl border border-slate-800 space-y-1 max-w-5xl mx-auto">
+          <p className="font-medium text-slate-300">
+            Developed and Maintained by{' '}
+            <strong className="text-amber-300 font-bold">
+              {brandingSettings?.developed_by_text || brandingSettings?.organization_name}
+            </strong>
+          </p>
+          {brandingSettings?.office_address && (
+            <p className="text-[11px] text-slate-500">
+              {brandingSettings.office_address}
+            </p>
+          )}
+        </footer>
+      )}
 
       {/* Forgot Password Modal */}
       {isForgotPasswordOpen && (

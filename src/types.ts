@@ -56,6 +56,8 @@ export interface User {
   position?: string;
   phone?: string;
   avatar?: string;
+  avatarUrl?: string;
+  customPermissions?: string[];
   signatureUrl?: string;
   twoFactorEnabled?: boolean;
   status?: 'ACTIVE' | 'PENDING' | 'INACTIVE';
@@ -195,6 +197,13 @@ export interface Submission {
   region: string;
   zone: string;
   woreda: string;
+  town?: string;
+  facility_name?: string;
+  region_id?: number | null;
+  zone_id?: number | null;
+  woreda_id?: number | null;
+  town_id?: number | null;
+  health_facility_id?: number | null;
   studyDurationMonths: number;
   budgetETB: number;
   status: SubmissionStatus;
@@ -293,9 +302,53 @@ export interface SmtpConfig {
   smtpSecurity: 'SSL' | 'TLS' | 'NONE';
   smtpFromName: string;
   smtpFromEmail: string;
+  smtpReplyToEmail?: string;
+}
+
+export interface BrandingSettings {
+  login_page_logo?: string;
+  header_logo?: string;
+  sidebar_logo?: string;
+  dashboard_logo?: string;
+  public_page_logo?: string;
+  certificate_logo?: string;
+  pdf_report_logo?: string;
+  email_template_logo?: string;
+  favicon?: string;
+  loading_logo?: string;
+  certificate_stamp?: string;
+  stamp_enabled?: boolean;
+  stamp_size?: number;
+  stamp_opacity?: number;
+  stamp_position?: 'bottom-right' | 'bottom-center' | 'bottom-left';
+  signature_image?: string;
+  signatory_name?: string;
+  signatory_title?: string;
+  cache_version?: number;
+
+  // ODMC Branding & Information
+  organization_name?: string;
+  organization_short_name?: string;
+  about_organization?: string;
+  mission?: string;
+  vision?: string;
+  website_url?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  office_address?: string;
+  organization_logo?: string;
+  organization_banner?: string;
+  developed_by_text?: string;
 }
 
 export interface SystemSettings {
+  systemName?: string;
+  organizationName?: string;
+  organizationShortName?: string;
+  aboutOrganization?: string;
+  mission?: string;
+  vision?: string;
+  websiteUrl?: string;
   institutionName: string;
   institutionAfaanOromo: string;
   institutionAmharic: string;
@@ -309,4 +362,94 @@ export interface SystemSettings {
   emailNotificationsEnabled: boolean;
   smsNotificationsEnabled: boolean;
   smtpConfig?: SmtpConfig;
+  brandingSettings?: BrandingSettings;
 }
+
+export interface StoredCertificate {
+  id: string;
+  certNo: string;
+  protocolId: string;
+  refNo: string;
+  researchTitle: string;
+  principalInvestigator: string;
+  institution: string;
+  approvalDate: string;
+  expiryDate: string;
+  irbDecision: string;
+  qrCodeUrl: string;
+  signatureName: string;
+  signatoryTitle?: string;
+  officialStampUrl?: string;
+  generatedDate: string;
+  generatedBy: string;
+  status: 'ACTIVE' | 'REGENERATED' | 'REVOKED';
+  version: number;
+}
+
+export interface RegionRecord {
+  id: number;
+  name: string;
+  code: string;
+  status: 'Active' | 'Inactive';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ZoneRecord {
+  id: number;
+  region_id: number;
+  name: string;
+  code: string;
+  status: 'Active' | 'Inactive';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WoredaRecord {
+  id: number;
+  zone_id: number;
+  name: string;
+  type: 'Woreda' | 'Town Administration';
+  status: 'Active' | 'Inactive';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TownRecord {
+  id: number;
+  woreda_id: number;
+  name: string;
+  sub_city: string | null;
+  status: 'Active' | 'Inactive';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HealthFacilityRecord {
+  id: number;
+  region_id: number;
+  zone_id: number;
+  woreda_id: number;
+  town_id: number | null;
+  facility_name: string;
+  facility_type: string;
+  ownership: string;
+  kebele: string | null;
+  status: 'Active' | 'Inactive';
+  latitude: number | null;
+  longitude: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LocationImportStats {
+  regionsImported: number;
+  zonesImported: number;
+  woredasImported: number;
+  townsImported: number;
+  facilitiesImported: number;
+  errorsCount: number;
+  status: 'Completed' | 'In Progress' | 'Failed';
+  lastImportDate: string;
+}
+

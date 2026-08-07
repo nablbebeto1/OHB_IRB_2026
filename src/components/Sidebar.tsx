@@ -1,5 +1,6 @@
 import React from 'react';
-import { UserRole, Language } from '../types';
+import { UserRole, Language, BrandingSettings } from '../types';
+import { OromiaLogo } from './OromiaLogo';
 import { translations } from '../utils/i18n';
 import {
   LayoutDashboard,
@@ -19,6 +20,9 @@ import {
   LogOut,
   HardDrive,
   Mail,
+  Palette,
+  Building2,
+  Info,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -28,6 +32,7 @@ interface SidebarProps {
   language: Language;
   pendingReviewsCount: number;
   upcomingMeetingsCount: number;
+  brandingSettings?: BrandingSettings;
   onOpenLogoutModal?: () => void;
 }
 
@@ -38,6 +43,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   language,
   pendingReviewsCount,
   upcomingMeetingsCount,
+  brandingSettings,
   onOpenLogoutModal,
 }) => {
   const t = translations[language];
@@ -125,9 +131,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
       roles: ['SUPER_ADMIN'],
     },
     {
+      id: 'branding',
+      label: 'Branding & Logo Settings',
+      icon: Palette,
+      roles: ['SUPER_ADMIN'],
+    },
+    {
       id: 'public-portal',
       label: t.guestPortal,
       icon: BookOpen,
+      roles: ['SUPER_ADMIN', 'IRB_ADMIN', 'IRB_CHAIR', 'SECRETARY', 'REVIEWER', 'COMMITTEE_MEMBER', 'RESEARCHER', 'GUEST'],
+    },
+    {
+      id: 'about-odmc',
+      label: brandingSettings?.organization_short_name ? `About ${brandingSettings.organization_short_name}` : 'About Organization',
+      icon: Building2,
       roles: ['SUPER_ADMIN', 'IRB_ADMIN', 'IRB_CHAIR', 'SECRETARY', 'REVIEWER', 'COMMITTEE_MEMBER', 'RESEARCHER', 'GUEST'],
     },
   ];
@@ -137,6 +155,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside className="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)] p-4 flex flex-col justify-between hidden md:flex">
       <div>
+        {(brandingSettings?.sidebar_logo || brandingSettings?.header_logo) ? (
+          <div className="px-3 pb-3 mb-2 border-b border-gray-100 flex justify-center">
+            <OromiaLogo
+              variant="emblem"
+              size="md"
+              logoUrl={brandingSettings?.sidebar_logo || brandingSettings?.header_logo}
+              alt="Sidebar Logo"
+            />
+          </div>
+        ) : null}
         <div className="px-3 py-2 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
           {currentRole === 'GUEST' ? 'Public Portal' : 'Main Navigation'}
         </div>
@@ -193,15 +221,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         )}
 
-        <div className="bg-gray-50 rounded-lg p-3 border border-gray-200/60">
-          <div className="flex items-center space-x-2 text-[#005BAC] font-bold text-xs">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>ETHICS GUIDELINE</span>
-          </div>
-          <p className="text-[10px] text-gray-500 mt-1 leading-relaxed">
-            Aligned with WHO, CIOMS, Helsinki, GCP & Ethiopian National Research Ethics Guidelines.
-          </p>
-          <div className="mt-2 text-[9px] text-gray-400 font-mono">OHB IRB Version 4.2.0</div>
+        <div className="text-center pt-1">
+          <div className="text-[9px] text-gray-400 font-mono">OHB IRB Version 4.2.0</div>
         </div>
       </div>
     </aside>

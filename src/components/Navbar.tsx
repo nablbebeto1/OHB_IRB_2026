@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { OromiaLogo } from './OromiaLogo';
+import { UserAvatar } from './UserAvatar';
 import {
   UserRole,
   Language,
   CalendarType,
   User,
   NotificationItem,
+  BrandingSettings,
 } from '../types';
 import { translations } from '../utils/i18n';
 import { formatDateWithCalendar } from '../utils/calendar';
@@ -26,6 +28,7 @@ import {
   HelpCircle,
   LogOut,
   Mail as MailIcon,
+  Palette,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -38,6 +41,7 @@ interface NavbarProps {
   calendar: CalendarType;
   onCalendarChange: (cal: CalendarType) => void;
   notifications: NotificationItem[];
+  brandingSettings?: BrandingSettings;
   onOpenNotifications: () => void;
   onOpenSearch: () => void;
   onOpenPublicPortal: () => void;
@@ -55,6 +59,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   calendar,
   onCalendarChange,
   notifications,
+  brandingSettings,
   onOpenNotifications,
   onOpenSearch,
   onOpenPublicPortal,
@@ -100,6 +105,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Globe className="w-3 h-3" />
             <span>{t.guestPortal}</span>
           </button>
+          <button
+            onClick={() => onNavigateTab?.('about-odmc')}
+            className="flex items-center space-x-1 hover:text-amber-200 transition-colors cursor-pointer text-[11px] font-bold text-amber-300 bg-amber-400/20 hover:bg-amber-400/30 px-2 py-0.5 rounded border border-amber-300/30 transition-all"
+            title="About Organization"
+          >
+            <Building2 className="w-3 h-3 text-amber-300" />
+            <span>{brandingSettings?.organization_short_name ? `About ${brandingSettings.organization_short_name}` : 'About Us'}</span>
+          </button>
         </div>
       </div>
 
@@ -108,7 +121,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center justify-between h-16">
           {/* Logo & Bureau Badge */}
           <div className="flex items-center space-x-3 cursor-pointer" onClick={() => onNavigateTab?.('dashboard')}>
-            <OromiaLogo variant="emblem" size="md" />
+            {brandingSettings?.header_logo ? (
+              <OromiaLogo variant="emblem" size="md" logoUrl={brandingSettings.header_logo} alt="Header Logo" />
+            ) : null}
             <div>
               <div className="flex items-center space-x-1.5">
                 <span className="font-extrabold text-[#005BAC] text-base tracking-tight">OHB-IRB</span>
@@ -238,10 +253,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                 className="flex items-center space-x-2 pl-1 hover:opacity-90 transition-opacity cursor-pointer focus:outline-none"
               >
-                <img
-                  src={currentUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'}
-                  alt={currentUser.name}
-                  className="w-8 h-8 rounded-full border-2 border-[#005BAC] object-cover"
+                <UserAvatar
+                  name={currentUser.name}
+                  avatarUrl={currentUser.avatarUrl || currentUser.avatar}
+                  role={currentUser.role}
+                  size="sm"
                 />
                 <div className="hidden lg:block text-left">
                   <p className="text-xs font-bold text-gray-800 leading-tight">{currentUser.name}</p>
@@ -285,16 +301,29 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </button>
 
                     {currentRole === 'SUPER_ADMIN' && (
-                      <button
-                        onClick={() => {
-                          setIsProfileMenuOpen(false);
-                          onNavigateTab?.('email-config');
-                        }}
-                        className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-blue-50 hover:text-[#005BAC] font-medium flex items-center space-x-2.5 transition-colors cursor-pointer"
-                      >
-                        <MailIcon className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Email Configuration</span>
-                      </button>
+                      <>
+                        <button
+                          onClick={() => {
+                            setIsProfileMenuOpen(false);
+                            onNavigateTab?.('email-config');
+                          }}
+                          className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-blue-50 hover:text-[#005BAC] font-medium flex items-center space-x-2.5 transition-colors cursor-pointer"
+                        >
+                          <MailIcon className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Email Configuration</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setIsProfileMenuOpen(false);
+                            onNavigateTab?.('branding');
+                          }}
+                          className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-blue-50 hover:text-[#005BAC] font-medium flex items-center space-x-2.5 transition-colors cursor-pointer"
+                        >
+                          <Palette className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Branding & Logo Settings</span>
+                        </button>
+                      </>
                     )}
 
                     <button

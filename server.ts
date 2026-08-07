@@ -179,7 +179,188 @@ app.post('/api/submissions', (req, res) => {
     `Created ${refNo}`
   );
 
-  res.status(201).json({ success: true, data: newSubmission });
+  console.log(`[API Submissions] Stored new protocol submission successfully: Ref=${refNo}, Title="${newSubmission.title.slice(0, 50)}...", PI=${newSubmission.principalInvestigator.name}, Documents=${newSubmission.documents.length}`);
+
+  res.status(201).json({
+    success: true,
+    message: 'Protocol submission stored successfully in system database',
+    data: newSubmission,
+  });
+});
+
+app.put('/api/submissions/:id', (req, res) => {
+  const { id } = req.params;
+  const index = submissionsData.findIndex((s) => s.id === id || s.refNo === id);
+  if (index === -1) {
+    console.error(`[API Submissions Error] Submission not found for update: ${id}`);
+    return res.status(404).json({ success: false, message: `Submission ${id} not found` });
+  }
+
+  const updated = {
+    ...submissionsData[index],
+    ...req.body,
+    updatedAt: new Date().toISOString(),
+  };
+
+  submissionsData[index] = updated;
+  console.log(`[API Submissions] Updated submission ${id}: Status=${updated.status}`);
+
+  res.json({
+    success: true,
+    message: 'Submission updated successfully',
+    data: updated,
+  });
+});
+
+// System Branding & Organizational Settings Memory Store
+let brandingData = {
+  login_page_logo: '',
+  header_logo: '',
+  sidebar_logo: '',
+  dashboard_logo: '',
+  public_page_logo: '',
+  certificate_logo: '',
+  pdf_report_logo: '',
+  email_template_logo: '',
+  favicon: '',
+  loading_logo: '',
+  certificate_stamp: '',
+  stamp_enabled: true,
+  stamp_size: 130,
+  stamp_opacity: 0.85,
+  stamp_position: 'bottom-right' as 'bottom-right' | 'bottom-center' | 'bottom-left',
+  signature_image: '',
+  signatory_name: 'Prof. Gemechu Hunduma',
+  signatory_title: 'Chairperson, OHB Institutional Review Board',
+  cache_version: Date.now(),
+
+  // Configurable Organizational Branding & Metadata
+  organization_name: '',
+  organization_short_name: '',
+  about_organization: '',
+  mission: '',
+  vision: '',
+  website_url: '',
+  contact_email: '',
+  contact_phone: '',
+  office_address: '',
+  organization_logo: '',
+  organization_banner: '',
+  developed_by_text: '',
+};
+
+// GET /api/branding
+app.get('/api/branding', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      brandingSettings: brandingData,
+      systemIdentity: {
+        systemName: settingsData.systemName || 'Oromia Health Bureau Ethical Review Portal',
+        organizationName: settingsData.organizationName || 'Oromia Health Bureau',
+        organizationShortName: settingsData.organizationShortName || 'OHB-IRB',
+        websiteUrl: settingsData.websiteUrl || 'https://irb.ohb.gov.et',
+        contactEmail: settingsData.contactEmail || 'irb@ohb.gov.et',
+        contactPhone: settingsData.contactPhone || '+251 11 551 7000',
+        address: settingsData.address || 'Finfinnee / Addis Ababa, Oromia Regional Government Center',
+      },
+    },
+  });
+});
+
+// POST /api/branding
+app.post('/api/branding', (req, res) => {
+  const { brandingSettings, systemIdentity, userId, userName, userRole } = req.body;
+
+  if (brandingSettings) {
+    brandingData = {
+      ...brandingData,
+      ...brandingSettings,
+      cache_version: Date.now(),
+    };
+  }
+
+  if (systemIdentity) {
+    if (systemIdentity.systemName) settingsData.systemName = systemIdentity.systemName;
+    if (systemIdentity.organizationName) settingsData.organizationName = systemIdentity.organizationName;
+    if (systemIdentity.organizationShortName) settingsData.organizationShortName = systemIdentity.organizationShortName;
+    if (systemIdentity.websiteUrl) settingsData.websiteUrl = systemIdentity.websiteUrl;
+    if (systemIdentity.contactEmail) settingsData.contactEmail = systemIdentity.contactEmail;
+    if (systemIdentity.contactPhone) settingsData.contactPhone = systemIdentity.contactPhone;
+    if (systemIdentity.address) settingsData.address = systemIdentity.address;
+  }
+
+  recordAudit(
+    userId || 'usr-superadmin',
+    userName || 'Super Admin',
+    userRole || 'SUPER_ADMIN',
+    'UPDATE_SYSTEM_BRANDING',
+    'Previous System Branding',
+    `Updated organizational branding assets, certificate stamp & system identity`
+  );
+
+  console.log('[API Branding] System branding settings updated successfully.');
+
+  res.json({
+    success: true,
+    message: 'System branding & organizational settings saved successfully in system_branding_settings.',
+    data: {
+      brandingSettings: brandingData,
+      systemIdentity: {
+        systemName: settingsData.systemName,
+        organizationName: settingsData.organizationName,
+        organizationShortName: settingsData.organizationShortName,
+        websiteUrl: settingsData.websiteUrl,
+        contactEmail: settingsData.contactEmail,
+        contactPhone: settingsData.contactPhone,
+        address: settingsData.address,
+      },
+    },
+  });
+});
+
+// POST /api/branding/upload
+app.post('/api/branding/upload', (req, res) => {
+  const { fieldName, fileName, fileData, fileType, fileSize } = req.body;
+
+  if (!fileName || !fileData) {
+    return res.status(400).json({ success: false, message: 'File name and data URL are required' });
+  }
+
+  const allowedExtensions = ['.png', '.jpg', '.jpeg', '.svg', '.webp', '.ico'];
+  const ext = path.extname(fileName).toLowerCase();
+
+  if (!allowedExtensions.includes(ext)) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid file format '${ext}'. Allowed branding formats: PNG, JPG, JPEG, SVG, WEBP, ICO.`,
+    });
+  }
+
+  const MAX_BYTES = 5 * 1024 * 1024; // 5MB limit
+  let bytes = typeof fileSize === 'number' ? fileSize : Math.round((fileData.length * 3) / 4);
+
+  if (bytes > MAX_BYTES) {
+    return res.status(400).json({
+      success: false,
+      message: `File size exceeds maximum 5MB limit. Upload size: ${(bytes / (1024 * 1024)).toFixed(1)} MB.`,
+    });
+  }
+
+  if (fieldName && fieldName in brandingData) {
+    (brandingData as any)[fieldName] = fileData;
+    brandingData.cache_version = Date.now();
+  }
+
+  console.log(`[API Branding Upload] Uploaded ${fileName} for field '${fieldName}'`);
+
+  res.json({
+    success: true,
+    message: `Asset '${fileName}' uploaded successfully.`,
+    url: fileData,
+    fieldName,
+    cacheVersion: brandingData.cache_version,
+  });
 });
 
 // File Upload & Document Management System
@@ -422,6 +603,113 @@ app.get('/api/certificates/verify/:refNo', (req, res) => {
       issuedBy: 'Oromia Health Bureau Institutional Review Board (OHB-IRB)',
     },
   });
+});
+
+// Certificate Repository Data Store & API Routes
+let storedCertificatesData = submissionsData
+  .filter((s) => s.status === 'APPROVED' || s.approvalCertificate)
+  .map((s) => {
+    const cert = s.approvalCertificate;
+    return {
+      id: `cert-${s.id}`,
+      certNo: cert?.refNo || s.refNo,
+      protocolId: s.id,
+      refNo: s.refNo,
+      researchTitle: s.title,
+      principalInvestigator: s.principalInvestigator.name,
+      institution: s.principalInvestigator.institution,
+      approvalDate: cert?.approvalDate || s.updatedAt || new Date().toISOString(),
+      expiryDate: cert?.expiryDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+      irbDecision: 'APPROVED',
+      qrCodeUrl: cert?.qrCodeUrl || `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(s.refNo)}`,
+      signatureName: cert?.signatureName || 'Prof. Gemechu Hunduma (Chairperson)',
+      generatedDate: cert?.approvalDate || s.updatedAt || new Date().toISOString(),
+      generatedBy: 'OHB IRB Secretariat',
+      status: 'ACTIVE',
+      version: 1,
+    };
+  });
+
+app.get('/api/certificates', (req, res) => {
+  res.json({ success: true, count: storedCertificatesData.length, data: storedCertificatesData });
+});
+
+app.post('/api/certificates/regenerate', (req, res) => {
+  const { submissionId } = req.body;
+  const existingIndex = storedCertificatesData.findIndex(
+    (c) => c.protocolId === submissionId || c.refNo === submissionId || c.certNo === submissionId
+  );
+
+  let updatedCert;
+  if (existingIndex >= 0) {
+    const prev = storedCertificatesData[existingIndex];
+    updatedCert = {
+      ...prev,
+      version: prev.version + 1,
+      generatedDate: new Date().toISOString(),
+      status: 'ACTIVE',
+    };
+    storedCertificatesData[existingIndex] = updatedCert;
+  } else {
+    const sub = submissionsData.find((s) => s.id === submissionId || s.refNo === submissionId);
+    updatedCert = {
+      id: `cert-${Date.now()}`,
+      certNo: sub?.refNo || `OHB-IRB/CERT/${Date.now()}`,
+      protocolId: sub?.id || submissionId,
+      refNo: sub?.refNo || submissionId,
+      researchTitle: sub?.title || 'Research Protocol',
+      principalInvestigator: sub?.principalInvestigator.name || 'PI',
+      institution: sub?.principalInvestigator.institution || 'OHB',
+      approvalDate: new Date().toISOString(),
+      expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+      irbDecision: 'APPROVED',
+      qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(sub?.refNo || submissionId)}`,
+      signatureName: 'Prof. Gemechu Hunduma (Chairperson)',
+      generatedDate: new Date().toISOString(),
+      generatedBy: 'OHB IRB Secretariat',
+      status: 'ACTIVE',
+      version: 2,
+    };
+    storedCertificatesData.unshift(updatedCert);
+  }
+
+  recordAudit('usr-3', 'Prof. Gemechu Hunduma', 'IRB_CHAIR', 'REGENERATE_CERTIFICATE', updatedCert.certNo, `Version ${updatedCert.version}`);
+  res.json({ success: true, data: updatedCert });
+});
+
+// Users & RBAC Permissions Endpoints
+app.get('/api/users', (req, res) => {
+  res.json({ success: true, count: usersData.length, data: usersData });
+});
+
+app.put('/api/users/:id/permissions', (req, res) => {
+  const { id } = req.params;
+  const { permissions, role } = req.body;
+  const u = usersData.find((usr) => usr.id === id);
+  if (!u) {
+    return res.status(404).json({ success: false, message: 'User not found' });
+  }
+
+  if (role) u.role = role;
+  if (permissions) u.customPermissions = permissions;
+
+  recordAudit('usr-1', 'Super Admin', 'SUPER_ADMIN', 'UPDATE_USER_PERMISSIONS', id, JSON.stringify({ role: u.role, permissionsCount: permissions?.length }));
+  res.json({ success: true, data: u });
+});
+
+app.post('/api/users/:id/avatar', (req, res) => {
+  const { id } = req.params;
+  const { avatarUrl } = req.body;
+  const u = usersData.find((usr) => usr.id === id);
+  if (!u) {
+    return res.status(404).json({ success: false, message: 'User not found' });
+  }
+
+  u.avatarUrl = avatarUrl;
+  u.avatar = avatarUrl;
+
+  recordAudit('usr-1', 'Super Admin', 'SUPER_ADMIN', 'UPDATE_USER_AVATAR', id, 'New Avatar Image Uploaded');
+  res.json({ success: true, data: u });
 });
 
 // 6. Dashboard Analytics Endpoint

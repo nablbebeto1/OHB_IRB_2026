@@ -1,4 +1,5 @@
 import React from 'react';
+import { OromiaLogo } from './OromiaLogo';
 import {
   Submission,
   MeetingItem,
@@ -6,6 +7,7 @@ import {
   UserRole,
   Language,
   CalendarType,
+  BrandingSettings,
 } from '../types';
 import { translations } from '../utils/i18n';
 import { formatDateWithCalendar } from '../utils/calendar';
@@ -44,6 +46,7 @@ interface DashboardViewProps {
   currentRole: UserRole;
   language: Language;
   calendar: CalendarType;
+  brandingSettings?: BrandingSettings;
   onSelectSubmission: (sub: Submission) => void;
   onNavigateTab: (tab: string) => void;
 }
@@ -55,6 +58,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   currentRole,
   language,
   calendar,
+  brandingSettings,
   onSelectSubmission,
   onNavigateTab,
 }) => {
@@ -112,6 +116,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         <div className="relative z-10 max-w-3xl">
+          {(brandingSettings?.dashboard_logo || brandingSettings?.header_logo) ? (
+            <div className="mb-3 bg-white/95 backdrop-blur-md p-2 rounded-xl border border-white/20 inline-block">
+              <OromiaLogo
+                size="md"
+                logoUrl={brandingSettings?.dashboard_logo || brandingSettings?.header_logo}
+                alt="Dashboard Logo"
+              />
+            </div>
+          ) : null}
           <div className="flex items-center space-x-2 text-amber-300 text-xs font-bold uppercase tracking-widest mb-1">
             <Sparkles className="w-4 h-4" />
             <span>Oromia Health Bureau Ethical Review Portal</span>

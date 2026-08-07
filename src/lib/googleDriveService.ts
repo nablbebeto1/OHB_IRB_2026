@@ -301,7 +301,6 @@ export const exportCertificateToDrive = async (
 <body>
   <div class="cert-card">
     <div class="header">
-      <h3>Oromia National Regional State</h3>
       <h2>Oromia Health Bureau - IRB</h2>
       <h4>Institutional Review Board Ethical Clearance Certificate</h4>
     </div>

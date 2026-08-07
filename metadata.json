@@ -1,6 +1,6 @@
 {
   "name": "OHB-IRB Ethical Review Management System",
-  "description": "Oromia Health Bureau Institutional Review Board (OHB-IRB) Enterprise Ethical Review Management System with multi-role workflows, AI protocol completeness check, certificate verification, committee management, and multi-language support.",
+  "description": "Oromia Health Bureau Institutional Review Board (OHB-IRB) Ethical Review Management System with multi-role workflows, AI protocol completeness check, certificate verification, committee management, and multi-language support.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

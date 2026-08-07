@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { OromiaLogo } from './OromiaLogo';
-import { Language, CalendarType } from '../types';
+import { Language, CalendarType, BrandingSettings } from '../types';
 import { translations } from '../utils/i18n';
 import { formatDateWithCalendar } from '../utils/calendar';
 import { Search, ShieldCheck, CheckCircle2, XCircle, Award, Loader2, Building, ArrowLeft } from 'lucide-react';
@@ -9,6 +9,7 @@ interface CertificateVerificationViewProps {
   language: Language;
   calendar: CalendarType;
   initialRefNo?: string;
+  brandingSettings?: BrandingSettings;
   onBackToDashboard: () => void;
 }
 
@@ -16,6 +17,7 @@ export const CertificateVerificationView: React.FC<CertificateVerificationViewPr
   language,
   calendar,
   initialRefNo = '',
+  brandingSettings,
   onBackToDashboard,
 }) => {
   const t = translations[language];
@@ -74,9 +76,16 @@ export const CertificateVerificationView: React.FC<CertificateVerificationViewPr
 
       {/* Hero Search Box */}
       <div className="bg-gradient-to-r from-[#005BAC] to-blue-900 text-white rounded-2xl p-8 shadow-md text-center space-y-4">
-        <div className="mx-auto flex justify-center">
-          <OromiaLogo variant="emblem" size="lg" />
-        </div>
+        {(brandingSettings?.public_page_logo || brandingSettings?.certificate_logo || brandingSettings?.header_logo) ? (
+          <div className="mx-auto flex justify-center">
+            <OromiaLogo
+              variant="emblem"
+              size="lg"
+              logoUrl={brandingSettings?.public_page_logo || brandingSettings?.certificate_logo || brandingSettings?.header_logo}
+              alt="Verification Logo"
+            />
+          </div>
+        ) : null}
         <h1 className="text-2xl font-extrabold tracking-tight">Public Ethics Certificate Verification Portal</h1>
         <p className="text-xs text-blue-100 max-w-xl mx-auto">
           Verify the legal authenticity of research ethics approval clearance certificates issued by the Oromia Health Bureau Institutional Review Board (OHB-IRB).
