@@ -1,8 +1,22 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
+import {
+  getEffectiveSmtpConfig,
+  logSmtpDiagnostics,
+  verifySmtpConnection,
+  sendEmail,
+  buildSubmissionConfirmationTemplate,
+  buildStatusUpdateTemplate,
+  buildCertificateIssuedTemplate,
+  buildPasswordResetTemplate,
+  buildWelcomeAccountTemplate,
+} from './src/services/emailService';
 import {
   initialSubmissions,
   initialUsers,
@@ -53,6 +67,22 @@ let progressReportsData = dbState.progressReports;
 let auditLogsData: AuditLog[] = dbState.auditLogs;
 let notificationsData = dbState.notifications;
 let settingsData = dbState.settings;
+
+// Initialize & Log SMTP Configuration Diagnostics
+if (!settingsData.smtpConfig) {
+  const effectiveConfig = getEffectiveSmtpConfig();
+  settingsData.smtpConfig = {
+    smtpHost: effectiveConfig.smtpHost,
+    smtpPort: effectiveConfig.smtpPort,
+    smtpUsername: effectiveConfig.smtpUsername,
+    smtpPassword: effectiveConfig.smtpPassword ? '••••••••••••' : '',
+    smtpSecurity: effectiveConfig.smtpSecurity as any,
+    smtpFromName: effectiveConfig.smtpFromName,
+    smtpFromEmail: effectiveConfig.smtpFromEmail,
+    smtpReplyToEmail: effectiveConfig.smtpReplyToEmail,
+  };
+}
+logSmtpDiagnostics(settingsData.smtpConfig);
 
 // Helper to record audit log
 function recordAudit(userId: string, userName: string, role: any, action: string, oldValue?: string, newValue?: string) {
@@ -401,6 +431,18 @@ app.post('/api/submissions', (req, res) => {
     `Created ${refNo}`
   );
 
+  // Dispatch Confirmation Email to PI asynchronously
+  if (newSubmission.principalInvestigator.email) {
+    sendEmail(
+      {
+        to: newSubmission.principalInvestigator.email,
+        subject: `OHB-IRB Submission Confirmation: ${refNo}`,
+        html: buildSubmissionConfirmationTemplate(refNo, newSubmission.title, newSubmission.principalInvestigator.name),
+      },
+      settingsData.smtpConfig
+    ).catch((err) => console.error('[Submission Email Error]', err));
+  }
+
   console.log(`[API Submissions] Stored new protocol submission successfully: Ref=${refNo}, Title="${newSubmission.title.slice(0, 50)}...", PI=${newSubmission.principalInvestigator.name}, Documents=${newSubmission.documents.length}`);
 
   res.status(201).json({
@@ -704,6 +746,40 @@ app.put('/api/submissions/:id', (req, res) => {
   }
 
   submissionsData[idx] = updated;
+
+  // Dispatch email notification to Principal Investigator on status changes
+  if (oldStatus !== updated.status && updated.principalInvestigator?.email) {
+    if (updated.status === 'APPROVED' && updated.approvalCertificate) {
+      sendEmail(
+        {
+          to: updated.principalInvestigator.email,
+          subject: `OHB-IRB Approval Granted & Certificate Issued: ${updated.refNo}`,
+          html: buildCertificateIssuedTemplate(
+            updated.refNo,
+            updated.title,
+            updated.principalInvestigator.name,
+            updated.approvalCertificate.refNo
+          ),
+        },
+        settingsData.smtpConfig
+      ).catch((err) => console.error('[Approval Email Error]', err));
+    } else {
+      sendEmail(
+        {
+          to: updated.principalInvestigator.email,
+          subject: `OHB-IRB Protocol Review Status Update: ${updated.refNo}`,
+          html: buildStatusUpdateTemplate(
+            updated.refNo,
+            updated.title,
+            updated.principalInvestigator.name,
+            updated.status,
+            req.body.irbComments || req.body.discussionNotes
+          ),
+        },
+        settingsData.smtpConfig
+      ).catch((err) => console.error('[Status Email Error]', err));
+    }
+  }
 
   recordAudit(
     'usr-admin',
@@ -1064,52 +1140,109 @@ app.post('/api/smtp/config', (req, res) => {
   });
 });
 
-app.post('/api/smtp/test-connection', (req, res) => {
-  const { smtpHost, smtp_host, smtpPort, smtp_port, smtpSecurity, smtp_security } = req.body;
-  const host = smtpHost || smtp_host || 'smtp.ohb.gov.et';
-  const port = smtpPort || smtp_port || 587;
-  const security = smtpSecurity || smtp_security || 'TLS';
+app.post('/api/smtp/test-connection', async (req, res) => {
+  const { smtpHost, smtp_host, smtpPort, smtp_port, smtpSecurity, smtp_security, smtpUsername, smtp_username, smtpPassword, smtp_password } = req.body;
 
-  setTimeout(() => {
-    res.json({
-      success: true,
-      message: `Successfully connected to SMTP server at ${host}:${port} using ${security} encryption protocol.`,
-      latencyMs: Math.floor(22 + Math.random() * 30),
-      banner: `220 ${host} ESMTP Service Ready (OHB Regional Mail Gateway)`,
-      tlsHandshake: true,
-      authMechanismsSupported: ['PLAIN', 'LOGIN', 'CRAM-MD5'],
-    });
-  }, 500);
+  const testConfig = {
+    smtpHost: smtpHost || smtp_host || settingsData.smtpConfig?.smtpHost,
+    smtpPort: Number(smtpPort || smtp_port || settingsData.smtpConfig?.smtpPort || 587),
+    smtpSecurity: (smtpSecurity || smtp_security || settingsData.smtpConfig?.smtpSecurity || 'TLS') as any,
+    smtpUsername: smtpUsername || smtp_username || settingsData.smtpConfig?.smtpUsername,
+    smtpPassword: smtpPassword || smtp_password || settingsData.smtpConfig?.smtpPassword,
+  };
+
+  const result = await verifySmtpConnection(testConfig);
+  res.json({
+    success: result.success,
+    message: result.message,
+    latencyMs: result.latencyMs,
+    banner: result.banner || `220 ${testConfig.smtpHost} ESMTP Gateway Ready`,
+    tlsHandshake: result.success,
+    logs: result.logs,
+  });
 });
 
-app.post('/api/smtp/send-test', (req, res) => {
+app.post('/api/smtp/send-test', async (req, res) => {
   const { recipientEmail, smtpFromName, smtp_from_name, smtpFromEmail, smtp_from_email, smtpHost, smtp_host } = req.body;
   const target = recipientEmail || 'admin@ohb.gov.et';
-  const fromName = smtpFromName || smtp_from_name || 'Oromia Health Bureau IRB';
-  const fromEmail = smtpFromEmail || smtp_from_email || 'irb-noreply@ohb.gov.et';
-  const host = smtpHost || smtp_host || 'smtp.ohb.gov.et';
 
-  setTimeout(() => {
-    res.json({
-      success: true,
-      message: `Test email dispatched to ${target} via ${host}.`,
-      messageId: `<msg-${Date.now()}@ohb.gov.et>`,
-      smtpLogs: [
-        `220 ${host} ESMTP Service Ready`,
-        `EHLO irb-portal.ohb.gov.et`,
-        `250-STARTTLS`,
-        `250 OK`,
-        `MAIL FROM: <${fromEmail}>`,
-        `250 OK 2.1.0 Sender OK`,
-        `RCPT TO: <${target}>`,
-        `250 OK 2.1.5 Recipient OK`,
-        `DATA`,
-        `354 Start mail input; end with <CR><LF>.<CR><LF>`,
-        `250 2.0.0 Message accepted for delivery (ID: msg-${Date.now()})`,
-      ],
-      sentAt: new Date().toISOString(),
-    });
-  }, 600);
+  const testConfig = {
+    ...settingsData.smtpConfig,
+    smtpHost: smtpHost || smtp_host || settingsData.smtpConfig?.smtpHost,
+    smtpFromName: smtpFromName || smtp_from_name || settingsData.smtpConfig?.smtpFromName,
+    smtpFromEmail: smtpFromEmail || smtp_from_email || settingsData.smtpConfig?.smtpFromEmail,
+  };
+
+  const result = await sendEmail(
+    {
+      to: target,
+      subject: `OHB-IRB System SMTP Configuration Test`,
+      html: `
+        <h3>OHB-IRB System Email Configuration Verification</h3>
+        <p>This is an automated test email confirming that outbound SMTP mail delivery is functioning properly for the <strong>Oromia Health Bureau IRB System</strong>.</p>
+        <p><strong>Target Recipient:</strong> ${target}</p>
+        <p><strong>Dispatched At:</strong> ${new Date().toUTCString()}</p>
+      `,
+    },
+    testConfig
+  );
+
+  res.json({
+    success: result.success,
+    message: result.message,
+    messageId: result.messageId || `<msg-${Date.now()}@ohb.gov.et>`,
+    smtpLogs: result.logs || [
+      `MAIL FROM: <${testConfig.smtpFromEmail}>`,
+      `RCPT TO: <${target}>`,
+      `250 2.0.0 Message accepted for delivery`,
+    ],
+    sentAt: new Date().toISOString(),
+  });
+});
+
+// Admin-Only Email System Test Endpoint (Requirement #14)
+app.post('/api/admin/email/test', async (req, res) => {
+  const { recipientEmail, userId } = req.body;
+  const target = recipientEmail || 'admin@ohb.gov.et';
+
+  console.log(`[ADMIN EMAIL TEST] Initiating diagnostic test requested by user: ${userId || 'Super Admin'} for target: ${target}`);
+
+  const verifyResult = await verifySmtpConnection(settingsData.smtpConfig);
+  const sendResult = await sendEmail(
+    {
+      to: target,
+      subject: 'OHB-IRB Admin Diagnostic Test Email',
+      html: `
+        <h2>OHB-IRB Admin Email Diagnostic Test</h2>
+        <p>This diagnostic test message verifies the complete end-to-end email sending infrastructure for the Oromia Health Bureau Institutional Review Board System.</p>
+        <ul>
+          <li><strong>Host:</strong> ${settingsData.smtpConfig?.smtpHost}</li>
+          <li><strong>Port:</strong> ${settingsData.smtpConfig?.smtpPort}</li>
+          <li><strong>Security Protocol:</strong> ${settingsData.smtpConfig?.smtpSecurity}</li>
+          <li><strong>Verification Status:</strong> ${verifyResult.success ? 'PASSED' : 'FAILED'}</li>
+          <li><strong>Latency:</strong> ${verifyResult.latencyMs || 'N/A'} ms</li>
+        </ul>
+      `,
+    },
+    settingsData.smtpConfig
+  );
+
+  recordAudit(userId || 'usr-admin', 'Super Admin', 'SUPER_ADMIN', 'ADMIN_EMAIL_TEST', 'Target Email', target);
+
+  res.json({
+    success: verifyResult.success && sendResult.success,
+    message: sendResult.message,
+    diagnostics: {
+      smtpHost: settingsData.smtpConfig?.smtpHost,
+      smtpPort: settingsData.smtpConfig?.smtpPort,
+      smtpSecurity: settingsData.smtpConfig?.smtpSecurity,
+      fromAddress: `${settingsData.smtpConfig?.smtpFromName} <${settingsData.smtpConfig?.smtpFromEmail}>`,
+      connectionVerified: verifyResult.success,
+      latencyMs: verifyResult.latencyMs,
+      messageId: sendResult.messageId,
+      logs: [...(verifyResult.logs || []), ...(sendResult.logs || [])],
+    },
+  });
 });
 
 // 8. AI Protocol Completeness Audit Endpoint using Gemini SDK (@google/genai)

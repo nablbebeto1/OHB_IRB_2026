@@ -509,6 +509,39 @@ export const SmtpConfigView: React.FC<SmtpConfigViewProps> = ({
                 <Send className="w-4 h-4 text-[#005BAC]" />
                 <span>Send Test Email</span>
               </button>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsTestingConnection(true);
+                  try {
+                    const res = await fetch('/api/admin/email/test', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ recipientEmail: currentUser.email || 'admin@ohb.gov.et', userId: currentUser.id }),
+                    });
+                    const data = await res.json();
+                    setTestConnResult({
+                      success: data.success,
+                      message: data.message,
+                      latencyMs: data.diagnostics?.latencyMs,
+                      banner: `Host: ${data.diagnostics?.smtpHost}:${data.diagnostics?.smtpPort} | Verified: ${data.diagnostics?.connectionVerified ? 'YES' : 'NO'}`,
+                    });
+                  } catch (err: any) {
+                    setTestConnResult({
+                      success: false,
+                      message: `Admin Email Test Error: ${err?.message || 'Server error'}`,
+                    });
+                  } finally {
+                    setIsTestingConnection(false);
+                  }
+                }}
+                disabled={isTestingConnection}
+                className="px-4 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold rounded-xl flex items-center space-x-2 transition-colors cursor-pointer border border-purple-200"
+              >
+                <Shield className="w-4 h-4 text-purple-700" />
+                <span>Run Admin Email Audit</span>
+              </button>
             </div>
 
             <button
