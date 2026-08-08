@@ -54,7 +54,7 @@ import {
 } from './src/data/dbEngine';
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT || 3000);
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -529,10 +529,10 @@ let brandingData = {
   website_url: dbState.branding?.website_url || 'https://irb.ohb.gov.et',
   contact_email: dbState.branding?.contact_email || 'irb@ohb.gov.et',
   contact_phone: dbState.branding?.contact_phone || '+251 11 551 7000',
-  office_address: dbState.branding?.office_address || 'Finfinnee / Addis Ababa, Oromia Regional Government Center',
+  office_address: dbState.branding?.office_address || '',
   organization_logo: dbState.branding?.organization_logo || '/assets/logo/OHB-WIDE-Logo.png',
-  organization_banner: dbState.branding?.organization_banner || '/assets/images/oromia_health_bureau_logo_1786021622212.jpg',
-  developed_by_text: dbState.branding?.developed_by_text || 'Developed by Oromia Health Bureau & ODMC Technical Directorate',
+  organization_banner: dbState.branding?.organization_banner || '',
+  developed_by_text: dbState.branding?.developed_by_text || '',
 };
 
 // GET /api/branding
@@ -548,7 +548,7 @@ app.get('/api/branding', (req, res) => {
         websiteUrl: settingsData.websiteUrl || 'https://irb.ohb.gov.et',
         contactEmail: settingsData.contactEmail || 'irb@ohb.gov.et',
         contactPhone: settingsData.contactPhone || '+251 11 551 7000',
-        address: settingsData.address || 'Finfinnee / Addis Ababa, Oromia Regional Government Center',
+        address: settingsData.address || '',
       },
     },
   });
@@ -1427,7 +1427,7 @@ async function startServer() {
       server: {
         middlewareMode: true,
         host: '0.0.0.0',
-        port: 3000,
+        port: PORT,
         hmr: false,
       },
       appType: 'spa',

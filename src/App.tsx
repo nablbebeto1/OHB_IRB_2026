@@ -1012,23 +1012,6 @@ export default function App() {
         </main>
       </div>
 
-      {/* Global Application Footer */}
-      {(settings.brandingSettings?.developed_by_text || settings.brandingSettings?.organization_name) && (
-        <footer className="w-full bg-slate-900 text-slate-400 py-6 text-xs text-center border-t border-slate-800 space-y-1 mt-auto">
-          <p className="font-medium text-slate-300">
-            Developed and Maintained by{' '}
-            <strong className="text-amber-300 font-bold">
-              {settings.brandingSettings?.developed_by_text || settings.brandingSettings?.organization_name}
-            </strong>
-          </p>
-          {settings.brandingSettings?.office_address && (
-            <p className="text-[11px] text-slate-500">
-              {settings.brandingSettings.office_address}
-            </p>
-          )}
-        </footer>
-      )}
-
       {/* Global Modals */}
 
       {/* 1. Submission Detail Modal */}

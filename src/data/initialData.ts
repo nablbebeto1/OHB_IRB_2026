@@ -684,7 +684,7 @@ export const initialSettings: SystemSettings = {
   institutionAmharic: 'የኦሮሚያ ጤና ቢሮ የሥነ-ምግባር መመርመሪያ ቦርድ',
   contactEmail: 'irb@ohb.gov.et',
   contactPhone: '+251 11 551 7000',
-  address: 'Finfinnee / Addis Ababa, Oromia Regional Government Center',
+  address: '',
   irbCode: 'IORG0008492 / FWA00021940',
   meetingFrequency: 'Bi-Monthly (Every 2nd & 4th Saturday)',
   standardReviewDays: 14,

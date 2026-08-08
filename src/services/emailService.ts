@@ -313,7 +313,7 @@ export function buildEmailWrapper(contentHtml: string, title = 'Oromia Health Bu
       </div>
       <div class="footer">
         <p><strong>Oromia Health Bureau - Health Research & IRB Secretariat</strong></p>
-        <p>Finfinnee / Addis Ababa, Oromia Regional Government Center | Contact: irb@ohb.gov.et</p>
+        <p>Contact: irb@ohb.gov.et</p>
         <p>© ${new Date().getFullYear()} OHB Institutional Review Board. Confidential & Official Communication.</p>
       </div>
     </div>

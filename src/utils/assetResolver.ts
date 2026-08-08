@@ -14,7 +14,7 @@ export const DEFAULT_STATIC_ASSETS = {
   loading_logo: '/assets/logo/OHB-WIDE-Logo.png',
   certificate_stamp: '/assets/logo/ohb-certificate-stamp.svg',
   organization_logo: '/assets/logo/OHB-WIDE-Logo.png',
-  organization_banner: '/assets/images/oromia_health_bureau_logo_1786021622212.jpg',
+  organization_banner: '',
   signature_image: '',
 };
 

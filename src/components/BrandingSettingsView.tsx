@@ -47,7 +47,7 @@ export const BrandingSettingsView: React.FC<BrandingSettingsViewProps> = ({
     websiteUrl: systemSettings?.websiteUrl || 'https://irb.ohb.gov.et',
     contactEmail: systemSettings?.contactEmail || 'irb@ohb.gov.et',
     contactPhone: systemSettings?.contactPhone || '+251 11 551 7000',
-    address: systemSettings?.address || 'Finfinnee / Addis Ababa, Oromia Regional Government Center',
+    address: systemSettings?.address || '',
   });
 
   // Branding Settings Form
@@ -652,7 +652,7 @@ export const BrandingSettingsView: React.FC<BrandingSettingsViewProps> = ({
 
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-slate-700 mb-1">
-                Footer "Developed and Maintained by" Text
+                Footer Organization Subtitle / Description
               </label>
               <input
                 type="text"

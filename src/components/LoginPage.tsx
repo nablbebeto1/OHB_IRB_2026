@@ -250,22 +250,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto">
           <AboutOdmcView brandingSettings={brandingSettings} />
         </main>
-
-        {(brandingSettings?.developed_by_text || brandingSettings?.organization_name) && (
-          <footer className="w-full bg-slate-900 text-slate-400 py-6 text-xs text-center border-t border-slate-800 space-y-1">
-            <p className="font-medium text-slate-300">
-              Developed and Maintained by{' '}
-              <strong className="text-amber-300 font-bold">
-                {brandingSettings?.developed_by_text || brandingSettings?.organization_name}
-              </strong>
-            </p>
-            {brandingSettings?.office_address && (
-              <p className="text-[11px] text-slate-500">
-                {brandingSettings.office_address}
-              </p>
-            )}
-          </footer>
-        )}
       </div>
     );
   }
@@ -672,23 +656,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             </button>
           </div>
         </div>
-      )}
-
-      {/* Global Footer */}
-      {(brandingSettings?.developed_by_text || brandingSettings?.organization_name) && (
-        <footer className="w-full bg-slate-900 text-slate-400 py-6 text-xs text-center rounded-2xl border border-slate-800 space-y-1 max-w-5xl mx-auto">
-          <p className="font-medium text-slate-300">
-            Developed and Maintained by{' '}
-            <strong className="text-amber-300 font-bold">
-              {brandingSettings?.developed_by_text || brandingSettings?.organization_name}
-            </strong>
-          </p>
-          {brandingSettings?.office_address && (
-            <p className="text-[11px] text-slate-500">
-              {brandingSettings.office_address}
-            </p>
-          )}
-        </footer>
       )}
 
       {/* Forgot Password Modal */}
