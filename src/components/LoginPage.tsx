@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { OromiaLogo } from './OromiaLogo';
 import { AboutOdmcView } from './AboutOdmcView';
+import { resolveAssetUrl } from '../utils/assetResolver';
 import { User, UserRole, Language, BrandingSettings } from '../types';
 import {
   Lock,
@@ -280,15 +281,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
           {/* Top Branding Section */}
           <div className="space-y-6 relative z-10">
-            {(brandingSettings?.login_page_logo || brandingSettings?.public_page_logo || brandingSettings?.header_logo) ? (
-              <div className="bg-white/95 backdrop-blur-md p-3.5 rounded-2xl shadow-lg border border-white/20 inline-block">
-                <OromiaLogo
-                  variant="wide"
-                  logoUrl={brandingSettings?.login_page_logo || brandingSettings?.public_page_logo || brandingSettings?.header_logo}
-                  alt="Login Logo"
-                />
-              </div>
-            ) : null}
+            {(() => {
+              const loginLogoUrl = resolveAssetUrl('login_page_logo', brandingSettings);
+              return (
+                <div className="bg-white/95 backdrop-blur-md p-3.5 rounded-2xl shadow-lg border border-white/20 inline-block">
+                  <OromiaLogo
+                    variant="wide"
+                    logoUrl={loginLogoUrl}
+                    alt="Login Logo"
+                  />
+                </div>
+              );
+            })()}
 
             <div className="space-y-2">
               <div className="inline-flex items-center space-x-2 bg-amber-400/20 text-amber-300 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase border border-amber-300/30">

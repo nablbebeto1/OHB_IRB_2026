@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { OromiaLogo } from './OromiaLogo';
+import { resolveAssetUrl } from '../utils/assetResolver';
 import { Submission, Language, CalendarType, BrandingSettings } from '../types';
 import { translations } from '../utils/i18n';
 import { formatDateWithCalendar } from '../utils/calendar';
@@ -415,19 +416,11 @@ export const CertificateGeneratorModal: React.FC<CertificateGeneratorModalProps>
             {/* Header Seals */}
             <div className="text-center space-y-2">
               <div className="mx-auto flex justify-center items-center h-16 pb-1">
-                {brandingSettings?.certificate_logo ? (
-                  <img
-                    src={`${brandingSettings.certificate_logo}${
-                      brandingSettings.certificate_logo.includes('data:')
-                        ? ''
-                        : `?v=${brandingSettings.cache_version || Date.now()}`
-                    }`}
-                    alt="Certificate Header Logo"
-                    className="max-h-full max-w-xs object-contain"
-                  />
-                ) : (
-                  <OromiaLogo variant="emblem" size="lg" />
-                )}
+                <img
+                  src={resolveAssetUrl('certificate_logo', brandingSettings)}
+                  alt="Certificate Header Logo"
+                  className="max-h-full max-w-xs object-contain"
+                />
               </div>
 
               <h1 className="text-xl sm:text-2xl font-extrabold text-[#005BAC] tracking-tight">
@@ -541,28 +534,15 @@ export const CertificateGeneratorModal: React.FC<CertificateGeneratorModalProps>
                       : 'right-24'
                   } pointer-events-none z-0`}
                 >
-                  {brandingSettings?.certificate_stamp ? (
-                    <img
-                      src={brandingSettings.certificate_stamp}
-                      alt="Official Stamp"
-                      style={{
-                        width: `${brandingSettings.stamp_size || 130}px`,
-                        opacity: brandingSettings.stamp_opacity ?? 0.85,
-                      }}
-                      className="object-contain"
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: `${brandingSettings?.stamp_size || 130}px`,
-                        height: `${brandingSettings?.stamp_size || 130}px`,
-                        opacity: brandingSettings?.stamp_opacity ?? 0.85,
-                      }}
-                      className="rounded-full border-4 border-dashed border-[#005BAC] flex items-center justify-center p-2 text-center text-[9px] font-bold text-[#005BAC] bg-blue-50/20"
-                    >
-                      OFFICIAL OHB-IRB APPROVAL STAMP
-                    </div>
-                  )}
+                  <img
+                    src={resolveAssetUrl('certificate_stamp', brandingSettings)}
+                    alt="Official Stamp"
+                    style={{
+                      width: `${brandingSettings?.stamp_size || 130}px`,
+                      opacity: brandingSettings?.stamp_opacity ?? 0.85,
+                    }}
+                    className="object-contain"
+                  />
                 </div>
               )}
             </div>

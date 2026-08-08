@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { OromiaLogo } from './OromiaLogo';
 import { UserAvatar } from './UserAvatar';
+import { resolveAssetUrl } from '../utils/assetResolver';
 import {
   UserRole,
   Language,
@@ -121,9 +122,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center justify-between h-16">
           {/* Logo & Bureau Badge */}
           <div className="flex items-center space-x-3 cursor-pointer" onClick={() => onNavigateTab?.('dashboard')}>
-            {brandingSettings?.header_logo ? (
-              <OromiaLogo variant="emblem" size="md" logoUrl={brandingSettings.header_logo} alt="Header Logo" />
-            ) : null}
+            <OromiaLogo variant="emblem" size="md" logoUrl={resolveAssetUrl('header_logo', brandingSettings)} alt="Header Logo" />
             <div>
               <div className="flex items-center space-x-1.5">
                 <span className="font-extrabold text-[#005BAC] text-base tracking-tight">OHB-IRB</span>

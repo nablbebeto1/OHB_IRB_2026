@@ -6,3 +6,8 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Runtime uploads
+uploads/*
+!uploads/**/.gitkeep
+data/*.tmp

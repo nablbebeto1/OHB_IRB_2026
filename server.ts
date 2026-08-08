@@ -58,6 +58,27 @@ const PORT = 3000;
 
 app.use(express.json({ limit: '10mb' }));
 
+// Initialize Persistent Upload & Asset Directories
+const UPLOADS_DIR = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+['logos', 'stamps', 'documents', 'images', 'certificates', 'email', 'backgrounds'].forEach((sub) => {
+  const dir = path.join(UPLOADS_DIR, sub);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
+
+// Serve persistent uploads and static branding assets
+app.use('/uploads', express.static(UPLOADS_DIR));
+
+const PUBLIC_ASSETS_DIR = path.join(process.cwd(), 'public', 'assets');
+if (fs.existsSync(PUBLIC_ASSETS_DIR)) {
+  app.use('/assets', express.static(PUBLIC_ASSETS_DIR));
+}
+app.use(express.static(path.join(process.cwd(), 'public')));
+
 // Initialize Persistent Database Engine
 const dbState = initializeDatabase();
 let submissionsData: Submission[] = dbState.submissions;
@@ -67,6 +88,7 @@ let progressReportsData = dbState.progressReports;
 let auditLogsData: AuditLog[] = dbState.auditLogs;
 let notificationsData = dbState.notifications;
 let settingsData = dbState.settings;
+
 
 // Initialize & Log SMTP Configuration Diagnostics
 if (!settingsData.smtpConfig) {
@@ -476,41 +498,41 @@ app.put('/api/submissions/:id', (req, res) => {
   });
 });
 
-// System Branding & Organizational Settings Memory Store
+// System Branding & Organizational Settings Persistent Store
 let brandingData = {
-  login_page_logo: '',
-  header_logo: '',
-  sidebar_logo: '',
-  dashboard_logo: '',
-  public_page_logo: '',
-  certificate_logo: '',
-  pdf_report_logo: '',
-  email_template_logo: '',
-  favicon: '',
-  loading_logo: '',
-  certificate_stamp: '',
-  stamp_enabled: true,
-  stamp_size: 130,
-  stamp_opacity: 0.85,
-  stamp_position: 'bottom-right' as 'bottom-right' | 'bottom-center' | 'bottom-left',
-  signature_image: '',
-  signatory_name: 'Prof. Gemechu Hunduma',
-  signatory_title: 'Chairperson, OHB Institutional Review Board',
-  cache_version: Date.now(),
+  login_page_logo: dbState.branding?.login_page_logo || '/assets/logo/OHB-WIDE-Logo.png',
+  header_logo: dbState.branding?.header_logo || '/assets/logo/OHB-WIDE-Logo.png',
+  sidebar_logo: dbState.branding?.sidebar_logo || '/assets/logo/OHB-WIDE-Logo.png',
+  dashboard_logo: dbState.branding?.dashboard_logo || '/assets/logo/OHB-WIDE-Logo.png',
+  public_page_logo: dbState.branding?.public_page_logo || '/assets/logo/OHB-WIDE-Logo.png',
+  certificate_logo: dbState.branding?.certificate_logo || '/assets/logo/OHB-WIDE-Logo.png',
+  pdf_report_logo: dbState.branding?.pdf_report_logo || '/assets/logo/OHB-WIDE-Logo.png',
+  email_template_logo: dbState.branding?.email_template_logo || '/assets/logo/OHB-WIDE-Logo.png',
+  favicon: dbState.branding?.favicon || '/favicon.png',
+  loading_logo: dbState.branding?.loading_logo || '/assets/logo/OHB-WIDE-Logo.png',
+  certificate_stamp: dbState.branding?.certificate_stamp || '/assets/logo/ohb-certificate-stamp.svg',
+  stamp_enabled: dbState.branding?.stamp_enabled !== undefined ? dbState.branding.stamp_enabled : true,
+  stamp_size: dbState.branding?.stamp_size || 130,
+  stamp_opacity: dbState.branding?.stamp_opacity ?? 0.85,
+  stamp_position: (dbState.branding?.stamp_position || 'bottom-right') as 'bottom-right' | 'bottom-center' | 'bottom-left',
+  signature_image: dbState.branding?.signature_image || '',
+  signatory_name: dbState.branding?.signatory_name || 'Prof. Gemechu Hunduma',
+  signatory_title: dbState.branding?.signatory_title || 'Chairperson, OHB Institutional Review Board',
+  cache_version: dbState.branding?.cache_version || Date.now(),
 
   // Configurable Organizational Branding & Metadata
-  organization_name: '',
-  organization_short_name: '',
-  about_organization: '',
-  mission: '',
-  vision: '',
-  website_url: '',
-  contact_email: '',
-  contact_phone: '',
-  office_address: '',
-  organization_logo: '',
-  organization_banner: '',
-  developed_by_text: '',
+  organization_name: dbState.branding?.organization_name || 'Oromia Health Bureau',
+  organization_short_name: dbState.branding?.organization_short_name || 'OHB-IRB',
+  about_organization: dbState.branding?.about_organization || 'Regional Ethical & Health Research Oversight Bureau',
+  mission: dbState.branding?.mission || 'Safeguard research participants and foster ethical health research excellence across Oromia.',
+  vision: dbState.branding?.vision || 'A model health research ethics oversight system in Ethiopia.',
+  website_url: dbState.branding?.website_url || 'https://irb.ohb.gov.et',
+  contact_email: dbState.branding?.contact_email || 'irb@ohb.gov.et',
+  contact_phone: dbState.branding?.contact_phone || '+251 11 551 7000',
+  office_address: dbState.branding?.office_address || 'Finfinnee / Addis Ababa, Oromia Regional Government Center',
+  organization_logo: dbState.branding?.organization_logo || '/assets/logo/OHB-WIDE-Logo.png',
+  organization_banner: dbState.branding?.organization_banner || '/assets/images/oromia_health_bureau_logo_1786021622212.jpg',
+  developed_by_text: dbState.branding?.developed_by_text || 'Developed by Oromia Health Bureau & ODMC Technical Directorate',
 };
 
 // GET /api/branding
@@ -542,6 +564,8 @@ app.post('/api/branding', (req, res) => {
       ...brandingSettings,
       cache_version: Date.now(),
     };
+    dbState.branding = brandingData;
+    persistDatabaseToDisk();
   }
 
   if (systemIdentity) {
@@ -552,6 +576,8 @@ app.post('/api/branding', (req, res) => {
     if (systemIdentity.contactEmail) settingsData.contactEmail = systemIdentity.contactEmail;
     if (systemIdentity.contactPhone) settingsData.contactPhone = systemIdentity.contactPhone;
     if (systemIdentity.address) settingsData.address = systemIdentity.address;
+    dbState.settings = settingsData;
+    persistDatabaseToDisk();
   }
 
   recordAudit(
@@ -563,11 +589,11 @@ app.post('/api/branding', (req, res) => {
     `Updated organizational branding assets, certificate stamp & system identity`
   );
 
-  console.log('[API Branding] System branding settings updated successfully.');
+  console.log('[API Branding] System branding settings updated and persisted successfully.');
 
   res.json({
     success: true,
-    message: 'System branding & organizational settings saved successfully in system_branding_settings.',
+    message: 'System branding & organizational settings saved persistently in database.',
     data: {
       brandingSettings: brandingData,
       systemIdentity: {
@@ -588,11 +614,11 @@ app.post('/api/branding/upload', (req, res) => {
   const { fieldName, fileName, fileData, fileType, fileSize } = req.body;
 
   if (!fileName || !fileData) {
-    return res.status(400).json({ success: false, message: 'File name and data URL are required' });
+    return res.status(400).json({ success: false, message: 'File name and file content are required' });
   }
 
   const allowedExtensions = ['.png', '.jpg', '.jpeg', '.svg', '.webp', '.ico'];
-  const ext = path.extname(fileName).toLowerCase();
+  const ext = path.extname(fileName).toLowerCase() || '.png';
 
   if (!allowedExtensions.includes(ext)) {
     return res.status(400).json({
@@ -611,17 +637,47 @@ app.post('/api/branding/upload', (req, res) => {
     });
   }
 
-  if (fieldName && fieldName in brandingData) {
-    (brandingData as any)[fieldName] = fileData;
-    brandingData.cache_version = Date.now();
+  let persistentUrl = fileData;
+
+  // Save file to disk if base64 data string is provided
+  if (typeof fileData === 'string' && (fileData.startsWith('data:') || !fileData.startsWith('/'))) {
+    const sanitizedFieldName = String(fieldName || 'asset').replace(/[^a-zA-Z0-9_]/g, '_');
+    const subfolder = fieldName === 'certificate_stamp' ? 'stamps' : 'logos';
+    const targetDir = path.join(process.cwd(), 'uploads', subfolder);
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
+
+    const uniqueFileName = `${sanitizedFieldName}-${Date.now()}-${Math.floor(Math.random() * 10000)}${ext}`;
+    const diskFilePath = path.join(targetDir, uniqueFileName);
+
+    try {
+      const base64Content = fileData.includes(',') ? fileData.split(',')[1] : fileData;
+      const buffer = Buffer.from(base64Content, 'base64');
+      fs.writeFileSync(diskFilePath, buffer);
+      persistentUrl = `/uploads/${subfolder}/${uniqueFileName}`;
+    } catch (writeErr: any) {
+      console.error('[API Branding Upload Write Error]', writeErr);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to write upload asset to persistent disk storage.',
+      });
+    }
   }
 
-  console.log(`[API Branding Upload] Uploaded ${fileName} for field '${fieldName}'`);
+  if (fieldName && fieldName in brandingData) {
+    (brandingData as any)[fieldName] = persistentUrl;
+    brandingData.cache_version = Date.now();
+    dbState.branding = brandingData;
+    persistDatabaseToDisk();
+  }
+
+  console.log(`[API Branding Upload] Persisted asset ${fileName} at '${persistentUrl}' for field '${fieldName}'`);
 
   res.json({
     success: true,
-    message: `Asset '${fileName}' uploaded successfully.`,
-    url: fileData,
+    message: `Asset '${fileName}' uploaded and stored persistently.`,
+    url: persistentUrl,
     fieldName,
     cacheVersion: brandingData.cache_version,
   });
@@ -635,14 +691,14 @@ app.post('/api/upload', (req, res) => {
     return res.status(400).json({ success: false, message: 'File name is required' });
   }
 
-  // Allowed file extensions: PDF, DOC, DOCX, XLSX, JPG, PNG
-  const allowedExtensions = ['.pdf', '.doc', '.docx', '.xlsx', '.jpg', '.jpeg', '.png'];
-  const ext = path.extname(fileName).toLowerCase();
+  // Allowed file extensions: PDF, DOC, DOCX, XLSX, JPG, PNG, WEBP
+  const allowedExtensions = ['.pdf', '.doc', '.docx', '.xlsx', '.jpg', '.jpeg', '.png', '.webp'];
+  const ext = path.extname(fileName).toLowerCase() || '.pdf';
 
   if (!allowedExtensions.includes(ext)) {
     return res.status(400).json({
       success: false,
-      message: `Invalid file format '${ext}'. Allowed formats: PDF, DOC, DOCX, XLSX, JPG, PNG.`,
+      message: `Invalid file format '${ext}'. Allowed formats: PDF, DOC, DOCX, XLSX, JPG, PNG, WEBP.`,
     });
   }
 
@@ -665,10 +721,30 @@ app.post('/api/upload', (req, res) => {
     });
   }
 
+  const safeBaseName = path.basename(fileName).replace(/[^a-zA-Z0-9_.-]/g, '_');
   const docId = `doc-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   const formattedSize = bytes >= 1024 * 1024
     ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
     : `${Math.round(bytes / 1024)} KB`;
+
+  const uniqueFileName = `${docId}_${safeBaseName}`;
+  const targetDir = path.join(process.cwd(), 'uploads', 'documents');
+  if (!fs.existsSync(targetDir)) {
+    fs.mkdirSync(targetDir, { recursive: true });
+  }
+
+  const diskFilePath = path.join(targetDir, uniqueFileName);
+  let persistentUrl = `/uploads/documents/${uniqueFileName}`;
+
+  if (fileData && typeof fileData === 'string' && (fileData.startsWith('data:') || !fileData.startsWith('/'))) {
+    try {
+      const base64Content = fileData.includes(',') ? fileData.split(',')[1] : fileData;
+      const buffer = Buffer.from(base64Content, 'base64');
+      fs.writeFileSync(diskFilePath, buffer);
+    } catch (writeErr) {
+      console.error('[API Document Upload Write Error]', writeErr);
+    }
+  }
 
   const newDoc = {
     id: docId,
@@ -676,7 +752,7 @@ app.post('/api/upload', (req, res) => {
     name: fileName,
     fileName: fileName,
     type: docType || 'PROPOSAL',
-    filePath: `/uploads/${docId}_${fileName}`,
+    filePath: persistentUrl,
     fileType: fileType || `application/${ext.replace('.', '')}`,
     size: formattedSize,
     fileSizeBytes: bytes,
@@ -684,15 +760,16 @@ app.post('/api/upload', (req, res) => {
     uploadedAt: new Date().toISOString(),
     version: '1.0',
     virusScanned: true,
-    url: fileData || '#',
+    url: persistentUrl,
   };
 
   res.status(201).json({
     success: true,
-    message: 'File uploaded and validated successfully',
+    message: 'File uploaded, saved to persistent disk, and validated successfully',
     data: newDoc,
   });
 });
+
 
 app.delete('/api/upload/:docId', (req, res) => {
   res.json({ success: true, message: `Document ${req.params.docId} removed successfully` });

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { resolveAssetUrl } from './utils/assetResolver';
 import {
   User,
   UserRole,
@@ -125,6 +126,12 @@ export default function App() {
             ...data.data.systemIdentity,
             brandingSettings: data.data.brandingSettings,
           }));
+
+          const faviconUrl = resolveAssetUrl('favicon', data.data.brandingSettings);
+          const link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+          if (link && faviconUrl) {
+            link.href = faviconUrl;
+          }
         }
       })
       .catch((err) => console.error('[Frontend] Branding fetch error:', err));
@@ -934,16 +941,14 @@ export default function App() {
           {activeTab === 'public-portal' && (
             <div className="space-y-8 max-w-4xl mx-auto py-4">
               <div className="bg-gradient-to-r from-[#003B73] to-[#005BAC] text-white p-8 rounded-2xl shadow-xl text-center space-y-4 border-b-4 border-amber-400">
-                {(settings.brandingSettings?.public_page_logo || settings.brandingSettings?.login_page_logo || settings.brandingSettings?.header_logo) ? (
-                  <div className="mx-auto flex justify-center">
-                    <OromiaLogo
-                      variant="emblem"
-                      size="lg"
-                      logoUrl={settings.brandingSettings?.public_page_logo || settings.brandingSettings?.login_page_logo || settings.brandingSettings?.header_logo}
-                      alt="Portal Logo"
-                    />
-                  </div>
-                ) : null}
+                <div className="mx-auto flex justify-center">
+                  <OromiaLogo
+                    variant="emblem"
+                    size="lg"
+                    logoUrl={resolveAssetUrl('public_page_logo', settings.brandingSettings)}
+                    alt="Portal Logo"
+                  />
+                </div>
                 <h1 className="text-3xl font-extrabold tracking-tight">Oromia Health Bureau IRB Portal</h1>
                 <p className="text-blue-100 text-sm max-w-xl mx-auto leading-relaxed">
                   Welcome to the official public portal for research ethics oversight in Oromia Regional State, Ethiopia.

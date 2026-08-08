@@ -203,9 +203,10 @@ export const BrandingSettingsView: React.FC<BrandingSettingsViewProps> = ({
 
         const data = await res.json();
         if (data.success) {
+          const persistentUrl = data.url || dataUrl;
           setBranding((prev) => ({
             ...prev,
-            [fieldName]: dataUrl,
+            [fieldName]: persistentUrl,
             cache_version: data.cacheVersion || Date.now(),
           }));
           setSaveSuccessMsg(`Updated ${fieldName.replace(/_/g, ' ')} successfully.`);
@@ -214,7 +215,7 @@ export const BrandingSettingsView: React.FC<BrandingSettingsViewProps> = ({
           if (fieldName === 'favicon') {
             const link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
             if (link) {
-              link.href = dataUrl;
+              link.href = persistentUrl;
             }
           }
         } else {

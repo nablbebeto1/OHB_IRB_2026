@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { resolveAssetUrl, handleImageError } from '../utils/assetResolver';
 
 interface OromiaLogoProps {
   className?: string;
@@ -13,15 +14,13 @@ export const OromiaLogo: React.FC<OromiaLogoProps> = ({
   className = '',
   size = 'md',
   logoUrl,
-  alt = 'System Logo',
+  alt = 'Oromia Health Bureau Logo',
 }) => {
   const [imgError, setImgError] = useState(false);
 
-  // If no logo has been uploaded, or image failed to load, display no logo
-  // and do not show a placeholder image or broken image icon.
-  if (!logoUrl || !logoUrl.trim() || imgError) {
-    return null;
-  }
+  const displayUrl = logoUrl && logoUrl.trim() && !imgError
+    ? logoUrl
+    : '/assets/logo/OHB-WIDE-Logo.png';
 
   const sizeClasses = {
     sm: 'max-h-6 w-auto',
@@ -33,11 +32,17 @@ export const OromiaLogo: React.FC<OromiaLogoProps> = ({
   return (
     <div className={`inline-flex items-center justify-center ${className}`}>
       <img
-        src={logoUrl}
+        src={displayUrl}
         alt={alt}
         className={`${sizeClasses[size] || 'max-h-12 w-auto'} object-contain max-w-full`}
-        onError={() => setImgError(true)}
+        onError={(e) => {
+          if (!imgError) {
+            setImgError(true);
+            handleImageError(e, '/assets/logo/OHB-WIDE-Logo.png');
+          }
+        }}
       />
     </div>
   );
 };
+

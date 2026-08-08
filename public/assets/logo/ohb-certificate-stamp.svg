@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="92" fill="none" stroke="#005BAC" stroke-width="4" stroke-dasharray="6 3"/>
+  <circle cx="100" cy="100" r="84" fill="none" stroke="#005BAC" stroke-width="2.5"/>
+  <circle cx="100" cy="100" r="62" fill="none" stroke="#005BAC" stroke-width="1.5"/>
+  <path id="textPathTop" d="M 25,100 A 75,75 0 0,1 175,100" fill="none"/>
+  <path id="textPathBottom" d="M 175,100 A 75,75 0 0,1 25,100" fill="none"/>
+  <text fill="#005BAC" font-size="9.5" font-weight="bold" font-family="Arial, sans-serif" letter-spacing="1">
+    <textPath href="#textPathTop" startOffset="50%" text-anchor="middle">OROMIA HEALTH BUREAU • ETHICS</textPath>
+  </text>
+  <text fill="#005BAC" font-size="8.5" font-weight="bold" font-family="Arial, sans-serif" letter-spacing="1">
+    <textPath href="#textPathBottom" startOffset="50%" text-anchor="middle">OFFICIAL IRB APPROVAL STAMP</textPath>
+  </text>
+  <polygon points="100,42 108,68 135,68 113,84 121,110 100,94 79,110 87,84 65,68 92,68" fill="#005BAC" opacity="0.12"/>
+  <text x="100" y="91" fill="#005BAC" font-size="13" font-weight="900" font-family="Arial, sans-serif" text-anchor="middle">OHB - IRB</text>
+  <text x="100" y="106" fill="#D97706" font-size="10" font-weight="bold" font-family="Arial, sans-serif" text-anchor="middle">★ APPROVED ★</text>
+  <text x="100" y="120" fill="#005BAC" font-size="8" font-weight="bold" font-family="Arial, sans-serif" text-anchor="middle">ETHICAL CLEARANCE</text>
+</svg>
