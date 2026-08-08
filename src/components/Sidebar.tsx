@@ -22,6 +22,7 @@ import {
   Mail,
   Palette,
   Building2,
+  Database,
   Info,
 } from 'lucide-react';
 
@@ -135,6 +136,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Branding & Logo Settings',
       icon: Palette,
       roles: ['SUPER_ADMIN'],
+    },
+    {
+      id: 'database-health',
+      label: 'Database Management & Health',
+      icon: Database,
+      roles: ['SUPER_ADMIN', 'IRB_ADMIN'],
     },
     {
       id: 'public-portal',

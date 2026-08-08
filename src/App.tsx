@@ -41,6 +41,7 @@ import { ReportsAnalyticsView } from './components/ReportsAnalyticsView';
 import { UserManagementView } from './components/UserManagementView';
 import { SmtpConfigView } from './components/SmtpConfigView';
 import { BrandingSettingsView } from './components/BrandingSettingsView';
+import { DatabaseHealthDashboard } from './components/DatabaseHealthDashboard';
 import { AboutOdmcView } from './components/AboutOdmcView';
 import { GoogleDriveView } from './components/GoogleDriveView';
 import { OromiaLogo } from './components/OromiaLogo';
@@ -924,6 +925,11 @@ export default function App() {
                 }));
               }}
             />
+          )}
+
+          {/* 11.7 DATABASE MANAGEMENT & HEALTH - SUPER_ADMIN & IRB_ADMIN */}
+          {activeTab === 'database-health' && (
+            <DatabaseHealthDashboard language={language} />
           )}
           {activeTab === 'public-portal' && (
             <div className="space-y-8 max-w-4xl mx-auto py-4">

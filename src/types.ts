@@ -453,3 +453,74 @@ export interface LocationImportStats {
   lastImportDate: string;
 }
 
+export interface TableStat {
+  tableName: string;
+  recordCount: number;
+  sizeBytes: number;
+  sizeFormatted: string;
+  status: 'OPTIMAL' | 'WARNING' | 'REPAIRED';
+  hasPrimaryKeys: boolean;
+  indexedFields: string[];
+}
+
+export interface DatabaseHealthStatus {
+  status: 'ONLINE_OPTIMAL' | 'DEGRADED' | 'MAINTENANCE';
+  connected: boolean;
+  engine: string;
+  storagePath: string;
+  pingLatencyMs: number;
+  uptimeSeconds: number;
+  totalTables: number;
+  totalRecords: number;
+  databaseSizeBytes: number;
+  databaseSizeFormatted: string;
+  memoryUsageMb: number;
+  slowQueryCount: number;
+  failedTransactionsCount: number;
+  lastBackupDate: string;
+  lastSchemaCheckDate: string;
+  autoReconnected: boolean;
+  tables: TableStat[];
+}
+
+export interface DatabaseSchemaValidationResult {
+  valid: boolean;
+  timestamp: string;
+  tablesAuditedCount: number;
+  missingTables: string[];
+  missingColumns: Array<{ table: string; column: string }>;
+  fixedCount: number;
+  details: string[];
+}
+
+export interface DatabaseIntegrityCheckResult {
+  valid: boolean;
+  timestamp: string;
+  checkedRelationshipsCount: number;
+  brokenRelationshipsCount: number;
+  repairedCount: number;
+  issues: Array<{ relation: string; issue: string; severity: 'HIGH' | 'MEDIUM' | 'LOW' }>;
+}
+
+export interface DatabaseFileValidationResult {
+  valid: boolean;
+  timestamp: string;
+  totalFilesCount: number;
+  verifiedCount: number;
+  missingFilesCount: number;
+  missingFilesList: Array<{ docId: string; fileName: string; proposalRef: string }>;
+}
+
+export interface DatabaseBackupRecord {
+  id: string;
+  filename: string;
+  createdAt: string;
+  sizeBytes: number;
+  sizeFormatted: string;
+  type: 'AUTOMATED' | 'MANUAL' | 'PRE_RESTORE_SAFETY';
+  recordsCount: number;
+  status: 'COMPLETED' | 'IN_PROGRESS' | 'FAILED';
+  downloadUrl?: string;
+  restoredAt?: string;
+}
+

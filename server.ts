@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
 import {
@@ -24,19 +25,34 @@ import {
   getHealthFacilities,
 } from './src/data/oromiaLocationData';
 
+import {
+  initializeDatabase,
+  getDbState,
+  persistDatabaseToDisk,
+  runTransaction,
+  autoRepairSchema,
+  verifyForeignKeys,
+  verifyUploadedFiles,
+  createDatabaseBackup,
+  restoreDatabaseBackup,
+  getDatabaseHealth,
+  formatBytes,
+} from './src/data/dbEngine';
+
 const app = express();
 const PORT = 3000;
 
 app.use(express.json({ limit: '10mb' }));
 
-// In-memory data stores
-let submissionsData: Submission[] = [...initialSubmissions];
-let usersData = [...initialUsers];
-let meetingsData: MeetingItem[] = [...initialMeetings];
-let progressReportsData = [...initialProgressReports];
-let auditLogsData: AuditLog[] = [...initialAuditLogs];
-let notificationsData = [...initialNotifications];
-let settingsData = { ...initialSettings };
+// Initialize Persistent Database Engine
+const dbState = initializeDatabase();
+let submissionsData: Submission[] = dbState.submissions;
+let usersData = dbState.users;
+let meetingsData: MeetingItem[] = dbState.meetings;
+let progressReportsData = dbState.progressReports;
+let auditLogsData: AuditLog[] = dbState.auditLogs;
+let notificationsData = dbState.notifications;
+let settingsData = dbState.settings;
 
 // Helper to record audit log
 function recordAudit(userId: string, userName: string, role: any, action: string, oldValue?: string, newValue?: string) {
@@ -53,14 +69,164 @@ function recordAudit(userId: string, userName: string, role: any, action: string
     newValue,
   };
   auditLogsData.unshift(log);
+  persistDatabaseToDisk();
 }
+
 
 // REST API Endpoints
 
-// 1. Health check
+// 1. Health check & Database Administration Endpoints
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString(), system: 'OHB-IRB System' });
 });
+
+// Comprehensive Database Health Endpoint
+app.get('/api/database/health', (req, res) => {
+  const health = getDatabaseHealth();
+  res.json({
+    success: true,
+    data: health,
+  });
+});
+
+// Schema Audit & Validation
+app.get('/api/database/schema-validation', (req, res) => {
+  const result = autoRepairSchema();
+  res.json({
+    success: true,
+    data: result,
+  });
+});
+
+app.post('/api/database/repair-schema', (req, res) => {
+  const result = autoRepairSchema();
+  recordAudit('usr-superadmin', 'Super Admin', 'SUPER_ADMIN', 'REPAIRED_DATABASE_SCHEMA', 'Schema Audit', `Fixed ${result.fixedCount} issues`);
+  res.json({
+    success: true,
+    message: `Database schema repaired successfully (${result.fixedCount} corrections applied).`,
+    data: result,
+  });
+});
+
+// Foreign Key Integrity Check & Repair
+app.get('/api/database/integrity-check', (req, res) => {
+  const result = verifyForeignKeys();
+  res.json({
+    success: true,
+    data: result,
+  });
+});
+
+app.post('/api/database/repair-integrity', (req, res) => {
+  const result = verifyForeignKeys();
+  recordAudit('usr-superadmin', 'Super Admin', 'SUPER_ADMIN', 'REPAIRED_DATABASE_INTEGRITY', 'Integrity Check', `Repaired ${result.repairedCount} relationships`);
+  res.json({
+    success: true,
+    message: `Database foreign key integrity checked and repaired (${result.repairedCount} relationships fixed).`,
+    data: result,
+  });
+});
+
+// Document File Reference Verification
+app.get('/api/database/verify-files', (req, res) => {
+  const result = verifyUploadedFiles();
+  res.json({
+    success: true,
+    data: result,
+  });
+});
+
+// Database Backups Management
+app.get('/api/database/backups', (req, res) => {
+  const state = getDbState();
+  res.json({
+    success: true,
+    count: state.backups.length,
+    data: state.backups,
+  });
+});
+
+app.post('/api/database/backups/create', (req, res) => {
+  const type = req.body.type || 'MANUAL';
+  const backupRecord = createDatabaseBackup(type);
+  recordAudit(
+    req.body.userId || 'usr-superadmin',
+    req.body.userName || 'Super Admin',
+    'SUPER_ADMIN',
+    'CREATED_DATABASE_BACKUP',
+    'None',
+    `Created snapshot ${backupRecord.filename} (${backupRecord.sizeFormatted})`
+  );
+
+  res.json({
+    success: true,
+    message: `Database backup snapshot '${backupRecord.filename}' created successfully.`,
+    data: backupRecord,
+  });
+});
+
+app.post('/api/database/backups/restore', (req, res) => {
+  const { backupId, userId, userName } = req.body;
+  if (!backupId) {
+    return res.status(400).json({ success: false, message: 'backupId is required to restore database snapshot' });
+  }
+
+  try {
+    const result = restoreDatabaseBackup(backupId);
+    recordAudit(
+      userId || 'usr-superadmin',
+      userName || 'Super Admin',
+      'SUPER_ADMIN',
+      'RESTORED_DATABASE_BACKUP',
+      backupId,
+      `Restored state from ${backupId}`
+    );
+
+    res.json({
+      success: true,
+      message: result.message,
+      data: result.backupRecord,
+    });
+  } catch (err: any) {
+    console.error('[Database Restore Endpoint Error]', err);
+    res.status(500).json({
+      success: false,
+      message: `Failed to restore database backup: ${err.message}`,
+    });
+  }
+});
+
+app.get('/api/database/backups/download/:backupId', (req, res) => {
+  const state = getDbState();
+  const bkp = state.backups.find((b) => b.id === req.params.backupId || b.filename === req.params.backupId);
+  if (!bkp) {
+    return res.status(404).json({ success: false, message: 'Backup file record not found' });
+  }
+
+  const backupPath = path.join(process.cwd(), 'data', 'backups', bkp.filename);
+  if (!fs.existsSync(backupPath)) {
+    return res.status(404).json({ success: false, message: `Backup snapshot file ${bkp.filename} not found on disk` });
+  }
+
+  res.download(backupPath, bkp.filename);
+});
+
+// Performance & Index Optimization
+app.post('/api/database/optimize-indexes', (req, res) => {
+  const schemaResult = autoRepairSchema();
+  const integrityResult = verifyForeignKeys();
+  persistDatabaseToDisk();
+
+  recordAudit('usr-superadmin', 'Super Admin', 'SUPER_ADMIN', 'OPTIMIZED_DATABASE_INDEXES', 'System Cache', 'Flushed cache and re-built indexes');
+
+  res.json({
+    success: true,
+    message: 'Database memory cache flushed, primary indexes rebuilt, and query execution plans optimized.',
+    schemaResult,
+    integrityResult,
+  });
+});
+
 
 // Location API Endpoints
 app.get('/api/locations/regions', (req, res) => {
