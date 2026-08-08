@@ -148,8 +148,8 @@ export const ReportsAnalyticsView: React.FC<ReportsAnalyticsViewProps> = ({
           <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4">
             Submissions & Approvals Monthly Trend
           </h3>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-64 w-full min-w-0 min-h-[256px]">
+            <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={256}>
               <LineChart data={monthlyData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
@@ -168,8 +168,8 @@ export const ReportsAnalyticsView: React.FC<ReportsAnalyticsViewProps> = ({
           <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4">
             Research Protocol Classification Breakdown
           </h3>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-64 w-full min-w-0 min-h-[256px]">
+            <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={256}>
               <BarChart data={studyTypeChartData} layout="vertical" margin={{ left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#F3F4F6" />
                 <XAxis type="number" tick={{ fontSize: 11 }} />

@@ -13,6 +13,7 @@ import {
   FileText,
   User,
   MapPin,
+  Building2,
   Calendar as CalendarIcon,
   ShieldCheck,
   Award,
@@ -213,6 +214,38 @@ export const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({
                   <div>
                     <span className="text-gray-500 text-[10px]">Contact Email</span>
                     <p className="font-bold text-blue-700">{submission.principalInvestigator.email}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Oromia Location & Primary Site Details */}
+              <div className="border border-blue-200 bg-blue-50/30 rounded-xl p-4 space-y-2">
+                <h4 className="font-bold text-[#005BAC] uppercase tracking-wider text-[11px] flex items-center space-x-1.5">
+                  <MapPin className="w-4 h-4" />
+                  <span>Primary Research Site & Oromia Location Hierarchy</span>
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 bg-white p-3 rounded-lg border border-blue-100">
+                  <div>
+                    <span className="text-gray-500 text-[10px]">Region</span>
+                    <p className="font-bold text-gray-900">{submission.region || 'Oromia'}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-[10px]">Zone</span>
+                    <p className="font-bold text-blue-900">{submission.zone || 'Jimma Zone'}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-[10px]">Woreda</span>
+                    <p className="font-bold text-gray-900">{submission.woreda || 'Jimma Town'}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-[10px]">Town / Sub-city</span>
+                    <p className="font-bold text-gray-800">{submission.town || 'Central'}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-[10px]">Health Facility</span>
+                    <p className="font-extrabold text-[#005BAC]">
+                      {submission.facility_name || 'Jimma University Medical Center'}
+                    </p>
                   </div>
                 </div>
               </div>

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   Submission,
   StudyType,
@@ -10,11 +10,21 @@ import {
 } from '../types';
 import { translations } from '../utils/i18n';
 import {
+  regionsTable,
+  zonesTable,
+  woredasTable,
+  townsTable,
+  healthFacilitiesTable,
+  getZonesByRegion,
+  getWoredasByZone,
+  getTownsByWoreda,
+  getHealthFacilities,
+} from '../data/oromiaLocationData';
+import {
   FileText,
   ShieldCheck,
   Upload,
   CheckCircle,
-  Sparkles,
   AlertTriangle,
   Plus,
   Trash2,
@@ -34,6 +44,11 @@ import {
   UserCheck,
   DollarSign,
   BookOpen,
+  MapPin,
+  Building2,
+  Search,
+  ChevronDown,
+  X,
 } from 'lucide-react';
 
 interface SubmissionWizardProps {
@@ -71,7 +86,6 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   const t = translations[language];
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
 
   // 1. Mandatory Research Information
   const [title, setTitle] = useState('');
@@ -93,7 +107,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   const [inclusionCriteria, setInclusionCriteria] = useState('');
   const [exclusionCriteria, setExclusionCriteria] = useState('');
 
-  // 4. Timeline & Research Details
+  // 4. Timeline & Research Details & Cascading Location
   const [initialRecruitmentDate, setInitialRecruitmentDate] = useState('2026-09-15');
   const [interventions, setInterventions] = useState('');
   const [primaryOutcome, setPrimaryOutcome] = useState('');
@@ -101,8 +115,100 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   const [riskLevel, setRiskLevel] = useState<RiskLevel>('MINIMAL_RISK');
   const [durationMonths, setDurationMonths] = useState(12);
   const [budgetETB, setBudgetETB] = useState(750000);
-  const [zone, setZone] = useState('Jimma Zone');
-  const [woreda, setWoreda] = useState('Goma');
+
+  // Cascading Location Selection State
+  const [selectedRegionId, setSelectedRegionId] = useState<number>(1); // Default 1 = Oromia Region
+  const [selectedZoneId, setSelectedZoneId] = useState<number | null>(13); // Default 13 = Jimma Zone
+  const [selectedWoredaId, setSelectedWoredaId] = useState<number | null>(191); // Default 191 = Jimma Town
+  const [selectedTownId, setSelectedTownId] = useState<number | null>(23); // Default 23 = Jimma Town Center
+  const [selectedFacilityId, setSelectedFacilityId] = useState<number | null>(1); // Default 1 = Jimma University Medical Center
+  const [facilitySearchQuery, setFacilitySearchQuery] = useState<string>('');
+  const [isFacilityComboboxOpen, setIsFacilityComboboxOpen] = useState<boolean>(false);
+
+  // Cascading Dynamic Location Options
+  const availableRegions = regionsTable;
+  const availableZones = useMemo(() => getZonesByRegion(selectedRegionId), [selectedRegionId]);
+  const availableWoredas = useMemo(() => (selectedZoneId ? getWoredasByZone(selectedZoneId) : []), [selectedZoneId]);
+  const availableTowns = useMemo(() => (selectedWoredaId ? getTownsByWoreda(selectedWoredaId) : []), [selectedWoredaId]);
+
+  const availableFacilities = useMemo(() => {
+    if (!selectedWoredaId) return [];
+    return getHealthFacilities(selectedWoredaId, selectedTownId, facilitySearchQuery);
+  }, [selectedWoredaId, selectedTownId, facilitySearchQuery]);
+
+  const selectedZoneObj = useMemo(() => zonesTable.find((z) => z.id === selectedZoneId), [selectedZoneId]);
+  const selectedWoredaObj = useMemo(() => woredasTable.find((w) => w.id === selectedWoredaId), [selectedWoredaId]);
+  const selectedTownObj = useMemo(() => townsTable.find((t) => t.id === selectedTownId), [selectedTownId]);
+  const selectedFacilityObj = useMemo(() => healthFacilitiesTable.find((f) => f.id === selectedFacilityId), [selectedFacilityId]);
+
+  // Cascading Reset Handlers
+  const handleRegionSelect = (regionId: number) => {
+    setSelectedRegionId(regionId);
+    const zones = getZonesByRegion(regionId);
+    const nextZoneId = zones.length > 0 ? zones[0].id : null;
+    setSelectedZoneId(nextZoneId);
+
+    if (nextZoneId) {
+      const woredas = getWoredasByZone(nextZoneId);
+      const nextWoredaId = woredas.length > 0 ? woredas[0].id : null;
+      setSelectedWoredaId(nextWoredaId);
+
+      if (nextWoredaId) {
+        const towns = getTownsByWoreda(nextWoredaId);
+        const nextTownId = towns.length > 0 ? towns[0].id : null;
+        setSelectedTownId(nextTownId);
+
+        const facilities = getHealthFacilities(nextWoredaId, nextTownId);
+        setSelectedFacilityId(facilities.length > 0 ? facilities[0].id : null);
+      } else {
+        setSelectedTownId(null);
+        setSelectedFacilityId(null);
+      }
+    } else {
+      setSelectedWoredaId(null);
+      setSelectedTownId(null);
+      setSelectedFacilityId(null);
+    }
+    setFacilitySearchQuery('');
+  };
+
+  const handleZoneSelect = (zoneId: number) => {
+    setSelectedZoneId(zoneId);
+    const woredas = getWoredasByZone(zoneId);
+    const nextWoredaId = woredas.length > 0 ? woredas[0].id : null;
+    setSelectedWoredaId(nextWoredaId);
+
+    if (nextWoredaId) {
+      const towns = getTownsByWoreda(nextWoredaId);
+      const nextTownId = towns.length > 0 ? towns[0].id : null;
+      setSelectedTownId(nextTownId);
+
+      const facilities = getHealthFacilities(nextWoredaId, nextTownId);
+      setSelectedFacilityId(facilities.length > 0 ? facilities[0].id : null);
+    } else {
+      setSelectedTownId(null);
+      setSelectedFacilityId(null);
+    }
+    setFacilitySearchQuery('');
+  };
+
+  const handleWoredaSelect = (woredaId: number) => {
+    setSelectedWoredaId(woredaId);
+    const towns = getTownsByWoreda(woredaId);
+    const nextTownId = towns.length > 0 ? towns[0].id : null;
+    setSelectedTownId(nextTownId);
+
+    const facilities = getHealthFacilities(woredaId, nextTownId);
+    setSelectedFacilityId(facilities.length > 0 ? facilities[0].id : null);
+    setFacilitySearchQuery('');
+  };
+
+  const handleTownSelect = (townId: number | null) => {
+    setSelectedTownId(townId);
+    const facilities = getHealthFacilities(selectedWoredaId, townId);
+    setSelectedFacilityId(facilities.length > 0 ? facilities[0].id : null);
+    setFacilitySearchQuery('');
+  };
 
   // 5. Financial Information & Documentation
   const [fundingSource, setFundingSource] = useState('Oromia Health Research Fund');
@@ -182,18 +288,10 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const replaceDocIdRef = useRef<string | null>(null);
 
-  // Step 4 State: Declaration, Agreement & AI Audit
+  // Step 4 State: Declaration & Agreement
   const [termsAccepted, setTermsAccepted] = useState<boolean>(false);
   const [declarationSigned, setDeclarationSigned] = useState<boolean>(false);
   const [digitalSignatureName, setDigitalSignatureName] = useState('Dr. Researcher');
-  const [aiAuditResult, setAiAuditResult] = useState<{
-    completenessScore: number;
-    flaggedIssues: string[];
-    recommendations: string[];
-    consentFormPresent: boolean;
-    riskAssessmentNote: string;
-    evaluatedAt: string;
-  } | null>(null);
 
   // Co-investigator handlers
   const addCoInvestigator = () => {
@@ -309,36 +407,6 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
     return <FileText className="w-4 h-4 text-gray-500" />;
   };
 
-  // Trigger Gemini AI Completeness Audit
-  const runAiCompletenessAudit = async () => {
-    setIsAiLoading(true);
-    try {
-      const docNames = documents.map((d) => d.name);
-      const res = await fetch('/api/gemini/completeness-check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title,
-          abstract,
-          studyType,
-          ethicsChecklist,
-          documentNames: docNames,
-          zone,
-          riskLevel,
-        }),
-      });
-
-      const data = await res.json();
-      if (data.success && data.aiAuditResult) {
-        setAiAuditResult(data.aiAuditResult);
-      }
-    } catch (err) {
-      console.error('AI Completeness Audit Error:', err);
-    } finally {
-      setIsAiLoading(false);
-    }
-  };
-
   // Final Form Submission Handler
   const handleSubmit = async () => {
     if (!termsAccepted) {
@@ -347,6 +415,14 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
     }
     if (!declarationSigned) {
       alert('Please confirm and digitally sign the ethical submission declaration.');
+      return;
+    }
+    if (!selectedZoneId) {
+      alert('Please select a Zone for the research location.');
+      return;
+    }
+    if (!selectedWoredaId) {
+      alert('Please select a Woreda for the research location.');
       return;
     }
 
@@ -361,6 +437,11 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         agreementText:
           "I acknowledge that I must comply with the requirements and responsibilities as the investigator or professional responsible for this proposal, as set forth in the Committee's Standard Operating Procedures (SOPs). I further acknowledge that I will ensure the research is conducted ethically, in accordance with internationally accepted ethical standards and all applicable national laws and regulations.",
       };
+
+      const zoneName = selectedZoneObj ? selectedZoneObj.name : '';
+      const woredaName = selectedWoredaObj ? selectedWoredaObj.name : '';
+      const townName = selectedTownObj ? selectedTownObj.name : '';
+      const facilityName = selectedFacilityObj ? selectedFacilityObj.facility_name : '';
 
       const payload = {
         title: title || 'Epidemiological Investigation Protocol',
@@ -397,8 +478,15 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         },
         coInvestigators,
         region: 'Oromia',
-        zone,
-        woreda,
+        zone: zoneName,
+        woreda: woredaName,
+        town: townName,
+        facility_name: facilityName,
+        region_id: selectedRegionId,
+        zone_id: selectedZoneId,
+        woreda_id: selectedWoredaId,
+        town_id: selectedTownId,
+        health_facility_id: selectedFacilityId,
         studyDurationMonths: durationMonths,
         budgetETB,
         riskLevel,
@@ -406,7 +494,6 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         documents,
         declarationSigned,
         digitalSignatureName,
-        aiAuditResult,
       };
 
       const res = await fetch('/api/submissions', {
@@ -462,7 +549,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           { step: 1, label: '1. Proposal Fields', icon: FileText },
           { step: 2, label: '2. Ethics Checklist', icon: ShieldCheck },
           { step: 3, label: '3. File Dossier Upload', icon: Upload },
-          { step: 4, label: '4. Agreement & Audit', icon: CheckCircle },
+          { step: 4, label: '4. Terms & Final Submission', icon: CheckCircle },
         ].map((s) => {
           const Icon = s.icon;
           const isActive = currentStep === s.step;
@@ -795,32 +882,207 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">Oromia Zone & Location</label>
-                  <div className="flex space-x-2">
+              {/* Cascading Oromia Research Location Selection */}
+              <div className="border border-blue-200 bg-blue-50/40 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-blue-100 pb-2">
+                  <div className="flex items-center space-x-2 text-[#005BAC]">
+                    <MapPin className="w-4 h-4" />
+                    <h4 className="font-bold text-xs uppercase tracking-wider">
+                      Oromia Research Location & Health Facility Selection
+                    </h4>
+                  </div>
+                  <span className="text-[10px] font-bold bg-blue-100 text-blue-900 px-2 py-0.5 rounded-full">
+                    Cascading System • {availableZones.length} Zones, {availableWoredas.length} Woredas
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {/* 1. Region */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">Region *</label>
                     <select
-                      value={zone}
-                      onChange={(e) => setZone(e.target.value)}
-                      className="w-1/2 text-xs p-2 rounded-lg border border-gray-300 bg-white font-semibold"
+                      value={selectedRegionId}
+                      onChange={(e) => handleRegionSelect(parseInt(e.target.value, 10))}
+                      className="w-full text-xs p-2 rounded-lg border border-gray-300 bg-white font-bold text-gray-900"
                     >
-                      {OROMIA_ZONES.map((z) => (
-                        <option key={z} value={z}>
-                          {z}
+                      {availableRegions.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.name} ({r.code})
                         </option>
                       ))}
                     </select>
+                  </div>
 
-                    <input
-                      type="text"
-                      value={woreda}
-                      onChange={(e) => setWoreda(e.target.value)}
-                      placeholder="Woreda / Health Center"
-                      className="w-1/2 text-xs p-2 rounded-lg border border-gray-300 bg-white"
-                    />
+                  {/* 2. Zone */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">Zone *</label>
+                    <select
+                      value={selectedZoneId || ''}
+                      onChange={(e) => handleZoneSelect(parseInt(e.target.value, 10))}
+                      className="w-full text-xs p-2 rounded-lg border border-gray-300 bg-white font-bold text-blue-950"
+                    >
+                      {availableZones.map((z) => (
+                        <option key={z.id} value={z.id}>
+                          {z.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 3. Woreda */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      Woreda * <span className="text-gray-400 font-normal">({availableWoredas.length})</span>
+                    </label>
+                    <select
+                      value={selectedWoredaId || ''}
+                      onChange={(e) => handleWoredaSelect(parseInt(e.target.value, 10))}
+                      disabled={availableWoredas.length === 0}
+                      className="w-full text-xs p-2 rounded-lg border border-gray-300 bg-white font-semibold text-gray-900 disabled:bg-gray-100"
+                    >
+                      {availableWoredas.map((w) => (
+                        <option key={w.id} value={w.id}>
+                          {w.name} {w.type ? `(${w.type})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 4. Town / Sub-city */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      Town / Sub-city <span className="text-gray-400 font-normal">(Optional)</span>
+                    </label>
+                    <select
+                      value={selectedTownId || ''}
+                      onChange={(e) => handleTownSelect(e.target.value ? parseInt(e.target.value, 10) : null)}
+                      disabled={availableTowns.length === 0}
+                      className="w-full text-xs p-2 rounded-lg border border-gray-300 bg-white font-medium text-gray-800 disabled:bg-gray-100"
+                    >
+                      <option value="">-- All / Not Applicable --</option>
+                      {availableTowns.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name} {t.sub_city ? `- ${t.sub_city}` : ''}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
+                {/* 5. Searchable Health Facility Combobox */}
+                <div className="relative pt-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold text-gray-700 flex items-center space-x-1">
+                      <Building2 className="w-3.5 h-3.5 text-[#005BAC]" />
+                      <span>Health Facility / Primary Site *</span>
+                    </label>
+                    <span className="text-[10px] text-gray-500 font-medium">
+                      {availableFacilities.length} facilities found in selected area
+                    </span>
+                  </div>
+
+                  <div
+                    className="w-full p-2.5 bg-white border border-gray-300 rounded-lg flex items-center justify-between cursor-pointer focus-within:ring-2 focus-within:ring-blue-500 hover:border-blue-400 transition-colors"
+                    onClick={() => setIsFacilityComboboxOpen(!isFacilityComboboxOpen)}
+                  >
+                    <div className="flex items-center space-x-2 overflow-hidden text-xs">
+                      {selectedFacilityObj ? (
+                        <div className="flex items-center flex-wrap gap-1.5">
+                          <span className="font-extrabold text-gray-900">{selectedFacilityObj.facility_name}</span>
+                          <span className="text-[10px] bg-blue-100 text-blue-900 font-extrabold px-2 py-0.5 rounded border border-blue-200">
+                            {selectedFacilityObj.facility_type}
+                          </span>
+                          <span className="text-[10px] bg-emerald-100 text-emerald-900 font-bold px-2 py-0.5 rounded border border-emerald-200">
+                            {selectedFacilityObj.ownership}
+                          </span>
+                          {selectedFacilityObj.kebele && (
+                            <span className="text-[10px] bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">
+                              {selectedFacilityObj.kebele}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 font-medium">Click to select or search health facility...</span>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-1 shrink-0 ml-2">
+                      {selectedFacilityId && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedFacilityId(null);
+                            setFacilitySearchQuery('');
+                          }}
+                          className="text-gray-400 hover:text-red-600 p-0.5 rounded hover:bg-gray-100"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                      <ChevronDown className="w-4 h-4 text-gray-500" />
+                    </div>
+                  </div>
+
+                  {/* Dropdown Search Panel */}
+                  {isFacilityComboboxOpen && (
+                    <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-blue-200 rounded-xl shadow-2xl p-2.5 space-y-2 max-h-72 flex flex-col">
+                      <div className="relative">
+                        <Search className="w-4 h-4 absolute left-2.5 top-2.5 text-gray-400" />
+                        <input
+                          type="text"
+                          value={facilitySearchQuery}
+                          onChange={(e) => setFacilitySearchQuery(e.target.value)}
+                          placeholder="Type to search facility name, type (Hospital, Health Center, Health Post), or ownership..."
+                          className="w-full text-xs pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50/50"
+                          autoFocus
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+
+                      <div className="overflow-y-auto flex-1 space-y-1 divide-y divide-gray-100 pr-1">
+                        {availableFacilities.length > 0 ? (
+                          availableFacilities.map((fac) => (
+                            <div
+                              key={fac.id}
+                              onClick={() => {
+                                setSelectedFacilityId(fac.id);
+                                setIsFacilityComboboxOpen(false);
+                              }}
+                              className={`p-2 rounded-lg cursor-pointer transition-colors text-xs flex items-center justify-between ${
+                                selectedFacilityId === fac.id
+                                  ? 'bg-blue-50 border border-blue-300 font-semibold'
+                                  : 'hover:bg-gray-50'
+                              }`}
+                            >
+                              <div>
+                                <p className="font-bold text-gray-900">{fac.facility_name}</p>
+                                <div className="flex items-center space-x-2 mt-0.5 text-[10px] text-gray-600">
+                                  <span className="font-bold text-blue-800">{fac.facility_type}</span>
+                                  <span>•</span>
+                                  <span>{fac.ownership}</span>
+                                  {fac.kebele && (
+                                    <>
+                                      <span>•</span>
+                                      <span className="text-gray-500">{fac.kebele}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                              {selectedFacilityId === fac.id && <Check className="w-4 h-4 text-[#005BAC]" />}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-4 text-center text-xs text-gray-500">
+                            No health facilities matched your search query in this Woreda/Town.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-gray-700 mb-1">Scientific Contact Details</label>
                   <input
@@ -831,17 +1093,17 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                     className="w-full text-xs p-2 rounded-lg border border-gray-300 bg-white"
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="block font-bold text-gray-700 mb-1">Bibliography / References</label>
-                <textarea
-                  rows={2}
-                  value={bibliography}
-                  onChange={(e) => setBibliography(e.target.value)}
-                  placeholder="Key literature references supporting this study..."
-                  className="w-full text-xs p-2 rounded-lg border border-gray-300 bg-white"
-                />
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">Bibliography / References</label>
+                  <input
+                    type="text"
+                    value={bibliography}
+                    onChange={(e) => setBibliography(e.target.value)}
+                    placeholder="Key literature references supporting this study..."
+                    className="w-full text-xs p-2 rounded-lg border border-gray-300 bg-white"
+                  />
+                </div>
               </div>
             </div>
 
@@ -1194,77 +1456,19 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                 onClick={() => setCurrentStep(4)}
                 className="bg-[#005BAC] text-white font-bold px-5 py-2.5 rounded-lg text-xs hover:bg-blue-800 transition-all flex items-center space-x-1 cursor-pointer"
               >
-                <span>Continue to Agreement & AI Audit</span>
+                <span>Continue to Terms & Final Submission</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
         )}
 
-        {/* STEP 4: Mandatory Terms & Conditions Agreement & AI Audit */}
+        {/* STEP 4: Mandatory Terms & Conditions Agreement & Final Submission */}
         {currentStep === 4 && (
           <div className="space-y-6">
             <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider border-b pb-2">
-              Step 4: Terms & Conditions Agreement, AI Audit & Final Submission
+              Step 4: Terms & Conditions Agreement, Final Submission
             </h3>
-
-            {/* AI Completeness Trigger Banner */}
-            <div className="bg-gradient-to-r from-indigo-900 via-purple-900 to-blue-900 text-white p-5 rounded-2xl shadow-sm space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Sparkles className="w-5 h-5 text-amber-300" />
-                  <h4 className="font-extrabold text-sm">Gemini AI Protocol Completeness Audit</h4>
-                </div>
-                <button
-                  onClick={runAiCompletenessAudit}
-                  disabled={isAiLoading}
-                  className="bg-amber-400 hover:bg-amber-300 text-gray-900 font-bold px-4 py-2 rounded-lg text-xs transition-all flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
-                >
-                  {isAiLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Analyzing Proposal...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />
-                      <span>{aiAuditResult ? 'Re-run AI Audit' : 'Run AI Completeness Audit'}</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {aiAuditResult && (
-                <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 text-xs space-y-3 mt-3">
-                  <div className="flex items-center justify-between border-b border-white/20 pb-2">
-                    <span className="font-bold text-amber-200">AI Completeness Score</span>
-                    <span className="text-lg font-extrabold text-emerald-300">{aiAuditResult.completenessScore} / 100</span>
-                  </div>
-
-                  {aiAuditResult.flaggedIssues.length > 0 && (
-                    <div>
-                      <span className="font-bold text-amber-300 block mb-1">Flagged Completeness Issues:</span>
-                      <ul className="list-disc list-inside space-y-0.5 text-red-200">
-                        {aiAuditResult.flaggedIssues.map((issue, idx) => (
-                          <li key={idx}>{issue}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {aiAuditResult.recommendations.length > 0 && (
-                    <div>
-                      <span className="font-bold text-blue-200 block mb-1">IRB Ethical Recommendations:</span>
-                      <ul className="list-disc list-inside space-y-0.5 text-blue-100">
-                        {aiAuditResult.recommendations.map((rec, idx) => (
-                          <li key={idx}>{rec}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
 
             {/* MANDATORY TERMS AND CONDITIONS AGREEMENT BOX */}
             <div className="border-2 border-amber-300 bg-amber-50/50 p-5 rounded-2xl space-y-4 shadow-xs">

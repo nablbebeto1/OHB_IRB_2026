@@ -12,6 +12,17 @@ import {
   initialSettings,
 } from './src/data/initialData';
 import { Submission, ReviewItem, MeetingItem, AuditLog } from './src/types';
+import {
+  regionsTable,
+  zonesTable,
+  woredasTable,
+  townsTable,
+  healthFacilitiesTable,
+  getZonesByRegion,
+  getWoredasByZone,
+  getTownsByWoreda,
+  getHealthFacilities,
+} from './src/data/oromiaLocationData';
 
 const app = express();
 const PORT = 3000;
@@ -49,6 +60,44 @@ function recordAudit(userId: string, userName: string, role: any, action: string
 // 1. Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString(), system: 'OHB-IRB System' });
+});
+
+// Location API Endpoints
+app.get('/api/locations/regions', (req, res) => {
+  res.json({ success: true, count: regionsTable.length, data: regionsTable });
+});
+
+app.get('/api/locations/zones', (req, res) => {
+  const regionId = req.query.regionId ? parseInt(req.query.regionId as string, 10) : 1;
+  const zones = getZonesByRegion(regionId);
+  res.json({ success: true, count: zones.length, data: zones });
+});
+
+app.get('/api/locations/woredas', (req, res) => {
+  const zoneId = req.query.zoneId ? parseInt(req.query.zoneId as string, 10) : null;
+  if (!zoneId) {
+    return res.json({ success: true, count: woredasTable.length, data: woredasTable });
+  }
+  const woredas = getWoredasByZone(zoneId);
+  res.json({ success: true, count: woredas.length, data: woredas });
+});
+
+app.get('/api/locations/towns', (req, res) => {
+  const woredaId = req.query.woredaId ? parseInt(req.query.woredaId as string, 10) : null;
+  if (!woredaId) {
+    return res.json({ success: true, count: townsTable.length, data: townsTable });
+  }
+  const towns = getTownsByWoreda(woredaId);
+  res.json({ success: true, count: towns.length, data: towns });
+});
+
+app.get('/api/locations/health-facilities', (req, res) => {
+  const woredaId = req.query.woredaId ? parseInt(req.query.woredaId as string, 10) : null;
+  const townId = req.query.townId ? parseInt(req.query.townId as string, 10) : null;
+  const search = req.query.search ? (req.query.search as string) : undefined;
+
+  const facilities = getHealthFacilities(woredaId, townId, search);
+  res.json({ success: true, count: facilities.length, data: facilities });
 });
 
 // 2. Submissions API
@@ -139,8 +188,15 @@ app.post('/api/submissions', (req, res) => {
     },
     coInvestigators: body.coInvestigators || [],
     region: 'Oromia',
-    zone: body.zone || 'Jimma Zone',
-    woreda: body.woreda || 'Central',
+    zone: body.zone || '',
+    woreda: body.woreda || '',
+    town: body.town || '',
+    facility_name: body.facility_name || body.facilityName || body.healthFacilityName || '',
+    region_id: body.region_id ?? body.regionId ?? 1,
+    zone_id: body.zone_id ?? body.zoneId ?? null,
+    woreda_id: body.woreda_id ?? body.woredaId ?? null,
+    town_id: body.town_id ?? body.townId ?? null,
+    health_facility_id: body.health_facility_id ?? body.healthFacilityId ?? null,
     studyDurationMonths: body.studyDurationMonths || 12,
     budgetETB: body.budgetETB || 500000,
     status: 'SECRETARY_SCREENING',
@@ -992,7 +1048,12 @@ app.post('/api/gemini/completeness-check', async (req, res) => {
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        host: '0.0.0.0',
+        port: 3000,
+        hmr: false,
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);

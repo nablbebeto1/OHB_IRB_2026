@@ -22,30 +22,30 @@ export let regionsTable: RegionRecord[] = [
 ];
 
 // 2. ZONES (22 Official Oromia Zones from PDF)
-export let zonesTable: ZoneRecord[] = [
-  { id: 1, region_id: 1, name: 'Arsi', code: 'ARS', status: 'Active', created_at: NOW, updated_at: NOW },
-  { id: 2, region_id: 1, name: 'Bale', code: 'BAL', status: 'Active', created_at: NOW, updated_at: NOW },
-  { id: 3, region_id: 1, name: 'Borena', code: 'BOR', status: 'Active', created_at: NOW, updated_at: NOW },
-  { id: 4, region_id: 1, name: 'Buno Bedele', code: 'BBD', status: 'Active', created_at: NOW, updated_at: NOW },
-  { id: 5, region_id: 1, name: 'East Bale', code: 'EBL', status: 'Active', created_at: NOW, updated_at: NOW },
-  { id: 6, region_id: 1, name: 'East Borena', code: 'EBR', status: 'Active', created_at: NOW, updated_at: NOW },
-  { id: 7, region_id: 1, name: 'East Hararge', code: 'EHR', status: 'Active', created_at: NOW, updated_at: NOW },
-  { id: 8, region_id: 1, name: 'East Shewa', code: 'ESH', status: 'Active', created_at: NOW, updated_at: NOW },
-  { id: 9, region_id: 1, name: 'East Wellega', code: 'EWL', status: 'Active', created_at: NOW, updated_at: NOW },
-  { id: 10, region_id: 1, name: 'Guji', code: 'GUJ', status: 'Active', created_at: NOW, updated_at: NOW },
-  { id: 11, region_id: 1, name: 'Horo Gudru Wellega', code: 'HGW', status: 'Active', created_at: NOW, updated_at: NOW },
-  { id: 12, region_id: 1, name: 'Ilu Aba Bora', code: 'IAB', status: 'Active', created_at: NOW, updated_at: NOW },
-  { id: 13, region_id: 1, name: 'Jimma', code: 'JIM', status: 'Active', created_at: NOW, updated_at: NOW },
-  { id: 14, region_id: 1, name: 'Kelem Wellega', code: 'KWL', status: 'Active', created_at: NOW, updated_at: NOW },
-  { id: 15, region_id: 1, name: 'North Shewa (OR)', code: 'NSH', status: 'Active', created_at: NOW, updated_at: NOW },
-  { id: 16, region_id: 1, name: 'Shager City', code: 'SGC', status: 'Active', created_at: NOW, updated_at: NOW },
-  { id: 17, region_id: 1, name: 'South West Shewa', code: 'SWS', status: 'Active', created_at: NOW, updated_at: NOW },
-  { id: 18, region_id: 1, name: 'West Arsi', code: 'WAR', status: 'Active', created_at: NOW, updated_at: NOW },
-  { id: 19, region_id: 1, name: 'West Guji', code: 'WGJ', status: 'Active', created_at: NOW, updated_at: NOW },
-  { id: 20, region_id: 1, name: 'West Hararge', code: 'WHR', status: 'Active', created_at: NOW, updated_at: NOW },
-  { id: 21, region_id: 1, name: 'West Shewa', code: 'WSH', status: 'Active', created_at: NOW, updated_at: NOW },
-  { id: 22, region_id: 1, name: 'West Wellega', code: 'WWL', status: 'Active', created_at: NOW, updated_at: NOW },
-].sort((a, b) => a.name.localeCompare(b.name));
+export let zonesTable: ZoneRecord[] = ([
+  { id: 1, region_id: 1, name: 'Arsi', code: 'ARS', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+  { id: 2, region_id: 1, name: 'Bale', code: 'BAL', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+  { id: 3, region_id: 1, name: 'Borena', code: 'BOR', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+  { id: 4, region_id: 1, name: 'Buno Bedele', code: 'BBD', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+  { id: 5, region_id: 1, name: 'East Bale', code: 'EBL', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+  { id: 6, region_id: 1, name: 'East Borena', code: 'EBR', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+  { id: 7, region_id: 1, name: 'East Hararge', code: 'EHR', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+  { id: 8, region_id: 1, name: 'East Shewa', code: 'ESH', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+  { id: 9, region_id: 1, name: 'East Wellega', code: 'EWL', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+  { id: 10, region_id: 1, name: 'Guji', code: 'GUJ', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+  { id: 11, region_id: 1, name: 'Horo Gudru Wellega', code: 'HGW', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+  { id: 12, region_id: 1, name: 'Ilu Aba Bora', code: 'IAB', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+  { id: 13, region_id: 1, name: 'Jimma', code: 'JIM', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+  { id: 14, region_id: 1, name: 'Kelem Wellega', code: 'KWL', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+  { id: 15, region_id: 1, name: 'North Shewa (OR)', code: 'NSH', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+  { id: 16, region_id: 1, name: 'Shager City', code: 'SGC', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+  { id: 17, region_id: 1, name: 'South West Shewa', code: 'SWS', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+  { id: 18, region_id: 1, name: 'West Arsi', code: 'WAR', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+  { id: 19, region_id: 1, name: 'West Guji', code: 'WGJ', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+  { id: 20, region_id: 1, name: 'West Hararge', code: 'WHR', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+  { id: 21, region_id: 1, name: 'West Shewa', code: 'WSH', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+  { id: 22, region_id: 1, name: 'West Wellega', code: 'WWL', status: 'Active' as const, created_at: NOW, updated_at: NOW },
+]).sort((a, b) => a.name.localeCompare(b.name));
 
 // 3. WOREDAS / TOWN ADMINISTRATIONS
 // Full PDF Dataset mapping for Woredas
@@ -449,7 +449,7 @@ export let woredasTable: WoredaRecord[] = rawWoredaList.map((item, idx) => ({
   zone_id: item.zoneId,
   name: item.name,
   type: item.type,
-  status: 'Active',
+  status: 'Active' as const,
   created_at: NOW,
   updated_at: NOW,
 })).sort((a, b) => a.name.localeCompare(b.name));
@@ -500,6 +500,178 @@ export let townsTable: TownRecord[] = [
   { id: 42, woreda_id: 345, name: 'Nejo Town Center', sub_city: 'Kebele 01', status: 'Active', created_at: NOW, updated_at: NOW },
 ];
 
+// 5. HEALTH FACILITIES
+// Major Referral & Regional Hospitals
+const majorHospitals: { name: string; woredaId: number; townId?: number; ownership: string }[] = [
+  { name: 'Jimma University Medical Center', woredaId: 191, townId: 23, ownership: 'Public/Government' },
+  { name: 'Shenen Gibe Hospital', woredaId: 191, townId: 23, ownership: 'Public/Government' },
+  { name: 'Asella Referral Hospital', woredaId: 3, townId: 1, ownership: 'Public/Government' },
+  { name: 'Adama Hospital Medical College', woredaId: 108, townId: 12, ownership: 'Public/Government' },
+  { name: 'Bishoftu General Hospital', woredaId: 111, townId: 14, ownership: 'Public/Government' },
+  { name: 'Nekemte Comprehensive Specialized Hospital', woredaId: 133, townId: 17, ownership: 'Public/Government' },
+  { name: 'Shambu General Hospital', woredaId: 165, townId: 20, ownership: 'Public/Government' },
+  { name: 'Goba Referral Hospital', woredaId: 34, townId: 3, ownership: 'Public/Government' },
+  { name: 'Metu Karl Referral Hospital', woredaId: 181, townId: 21, ownership: 'Public/Government' },
+  { name: 'Ambo University Referral Hospital', woredaId: 302, townId: 38, ownership: 'Public/Government' },
+  { name: 'Fitche General Hospital', woredaId: 225, townId: 26, ownership: 'Public/Government' },
+  { name: 'Negele Borena General Hospital', woredaId: 76, townId: 8, ownership: 'Public/Government' },
+  { name: 'Bale Robe General Hospital', woredaId: 40, townId: 4, ownership: 'Public/Government' },
+  { name: 'Bedele General Hospital', woredaId: 54, townId: 6, ownership: 'Public/Government' },
+  { name: 'Chiro General Hospital', woredaId: 286, townId: 37, ownership: 'Public/Government' },
+  { name: 'Denbi Dollo General Hospital', woredaId: 209, townId: 24, ownership: 'Public/Government' },
+  { name: 'Woliso St. Luke Referral Hospital', woredaId: 252, townId: 29, ownership: 'Public/Government' },
+  { name: 'Shashemene Comprehensive Specialized Hospital', woredaId: 267, townId: 33, ownership: 'Public/Government' },
+  { name: 'Bule Hora University Teaching Hospital', woredaId: 273, townId: 34, ownership: 'Public/Government' },
+];
+
+// Generate facility list covering all Woredas and Towns in Oromia
+export let healthFacilitiesTable: HealthFacilityRecord[] = (() => {
+  const facilities: HealthFacilityRecord[] = [];
+  let idCounter = 1;
+
+  // 1. Add major specialized hospitals first
+  majorHospitals.forEach((h) => {
+    const woreda = woredasTable.find((w) => w.id === h.woredaId);
+    facilities.push({
+      id: idCounter++,
+      region_id: 1,
+      zone_id: woreda ? woreda.zone_id : 1,
+      woreda_id: h.woredaId,
+      town_id: h.townId || null,
+      facility_name: h.name,
+      facility_type: 'Hospital',
+      ownership: h.ownership,
+      kebele: 'Kebele 01',
+      status: 'Active',
+      latitude: 7.67,
+      longitude: 36.83,
+      created_at: NOW,
+      updated_at: NOW,
+    });
+  });
+
+  // 2. Add Woreda Health Center, Primary Hospital, and Health Post for EVERY Woreda
+  woredasTable.forEach((woreda) => {
+    const matchingTown = townsTable.find((t) => t.woreda_id === woreda.id);
+
+    // Primary Woreda Health Center
+    facilities.push({
+      id: idCounter++,
+      region_id: 1,
+      zone_id: woreda.zone_id,
+      woreda_id: woreda.id,
+      town_id: matchingTown ? matchingTown.id : null,
+      facility_name: `${woreda.name} Health Center`,
+      facility_type: 'Health Center',
+      ownership: 'Public/Government',
+      kebele: 'Kebele 01',
+      status: 'Active',
+      latitude: null,
+      longitude: null,
+      created_at: NOW,
+      updated_at: NOW,
+    });
+
+    // Woreda Primary Clinic / Hospital
+    facilities.push({
+      id: idCounter++,
+      region_id: 1,
+      zone_id: woreda.zone_id,
+      woreda_id: woreda.id,
+      town_id: matchingTown ? matchingTown.id : null,
+      facility_name: `${woreda.name} Primary Hospital`,
+      facility_type: 'Hospital',
+      ownership: 'Public/Government',
+      kebele: 'Kebele 02',
+      status: 'Active',
+      latitude: null,
+      longitude: null,
+      created_at: NOW,
+      updated_at: NOW,
+    });
+
+    // Health Post 01
+    facilities.push({
+      id: idCounter++,
+      region_id: 1,
+      zone_id: woreda.zone_id,
+      woreda_id: woreda.id,
+      town_id: matchingTown ? matchingTown.id : null,
+      facility_name: `${woreda.name} 01 Health Post`,
+      facility_type: 'Health Post',
+      ownership: 'Public/Government',
+      kebele: 'Ganda 01',
+      status: 'Active',
+      latitude: null,
+      longitude: null,
+      created_at: NOW,
+      updated_at: NOW,
+    });
+
+    // Health Post 02
+    facilities.push({
+      id: idCounter++,
+      region_id: 1,
+      zone_id: woreda.zone_id,
+      woreda_id: woreda.id,
+      town_id: matchingTown ? matchingTown.id : null,
+      facility_name: `${woreda.name} Central Health Post`,
+      facility_type: 'Health Post',
+      ownership: 'Public/Government',
+      kebele: 'Ganda 02',
+      status: 'Active',
+      latitude: null,
+      longitude: null,
+      created_at: NOW,
+      updated_at: NOW,
+    });
+  });
+
+  return facilities;
+})();
+
+// Helper functions
+export function getZonesByRegion(regionId: number): ZoneRecord[] {
+  return zonesTable.filter((z) => z.region_id === regionId);
+}
+
+export function getWoredasByZone(zoneId: number): WoredaRecord[] {
+  return woredasTable.filter((w) => w.zone_id === zoneId);
+}
+
+export function getTownsByWoreda(woredaId: number): TownRecord[] {
+  return townsTable.filter((t) => t.woreda_id === woredaId);
+}
+
+export function getHealthFacilities(
+  woredaId?: number | null,
+  townId?: number | null,
+  search?: string
+): HealthFacilityRecord[] {
+  let list = healthFacilitiesTable;
+
+  if (woredaId) {
+    list = list.filter((f) => f.woreda_id === woredaId);
+  }
+
+  if (townId) {
+    list = list.filter((f) => f.town_id === townId);
+  }
+
+  if (search && search.trim() !== '') {
+    const q = search.toLowerCase().trim();
+    list = list.filter(
+      (f) =>
+        f.facility_name.toLowerCase().includes(q) ||
+        f.facility_type.toLowerCase().includes(q) ||
+        f.ownership.toLowerCase().includes(q) ||
+        (f.kebele && f.kebele.toLowerCase().includes(q))
+    );
+  }
+
+  return list;
+}
+
 // Helper to lookup Woreda ID by name (case insensitive)
 export function findWoredaIdByName(zoneName: string, woredaName: string): WoredaRecord | undefined {
   const z = zonesTable.find((zn) => zn.name.toLowerCase().trim() === zoneName.toLowerCase().trim());
@@ -515,7 +687,7 @@ export let importStats: LocationImportStats = {
   zonesImported: 22,
   woredasImported: woredasTable.length,
   townsImported: townsTable.length,
-  facilitiesImported: 7887,
+  facilitiesImported: healthFacilitiesTable.length,
   errorsCount: 0,
   status: 'Completed',
   lastImportDate: NOW,

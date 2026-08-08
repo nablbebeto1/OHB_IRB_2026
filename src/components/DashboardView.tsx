@@ -284,8 +284,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">
               Submission Status Distribution
             </h3>
-            <div className="h-48 w-full">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-48 w-full min-w-0 min-h-[192px]">
+              <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={192}>
                 <PieChart>
                   <Pie
                     data={statusPieData}
@@ -362,8 +362,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <p className="text-[11px] text-gray-500">Research activity across zonal health departments</p>
             </div>
           </div>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-64 w-full min-w-0 min-h-[256px]">
+            <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={256}>
               <BarChart data={zoneChartData} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
                 <XAxis dataKey="zone" tick={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" />
